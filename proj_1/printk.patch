@@ -1,0 +1,37 @@
+diff --git a/kernel/relay.c b/kernel/relay.c
+index d1a67fbb819d..7e80feae4a48 100644
+--- a/kernel/relay.c
++++ b/kernel/relay.c
+@@ -8,10 +8,11 @@
+  *
+  * Moved to kernel/relay.c by Paul Mundt, 2006.
+  * November 2006 - CPU hotplug support by Mathieu Desnoyers
+- * 	(mathieu.desnoyers@polymtl.ca)
++ * (mathieu.desnoyers@polymtl.ca)
+  *
+  * This file is released under the GPL.
+  */
++/*MKND MODS 2021*/
+ #include <linux/errno.h>
+ #include <linux/stddef.h>
+ #include <linux/slab.h>
+diff --git a/net/socket.c b/net/socket.c
+index 4f2c6d2795d0..0ebd6387597a 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1789,6 +1789,7 @@ SYSCALL_DEFINE4(accept4, int, fd, struct sockaddr __user *, upeer_sockaddr,
+ SYSCALL_DEFINE3(accept, int, fd, struct sockaddr __user *, upeer_sockaddr,
+ 		int __user *, upeer_addrlen)
+ {
++	printk(KERN_INFO "My Message: accept() definition called");
+ 	return __sys_accept4(fd, upeer_sockaddr, upeer_addrlen, 0);
+ }
+ 
+@@ -1848,6 +1849,7 @@ int __sys_connect(int fd, struct sockaddr __user *uservaddr, int addrlen)
+ SYSCALL_DEFINE3(connect, int, fd, struct sockaddr __user *, uservaddr,
+ 		int, addrlen)
+ {
++	printk(KERN_INFO "My Message: connect() definition called");
+ 	return __sys_connect(fd, uservaddr, addrlen);
+ }
+ 
