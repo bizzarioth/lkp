@@ -1,0 +1,75 @@
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index ce18119ea0d0..1265fc28a00b 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -368,7 +368,8 @@
+ 444	common	landlock_create_ruleset	sys_landlock_create_ruleset
+ 445	common	landlock_add_rule	sys_landlock_add_rule
+ 446	common	landlock_restrict_self	sys_landlock_restrict_self
+-
++# Custom Syscall
++447	common	s2_encrypt	sys_s2_encrypt
+ #
+ # Due to a historical design error, certain syscalls are numbered differently
+ # in x32 as compared to native x86_64.  These syscalls have numbers 512-547.
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 050511e8f1f8..db78b3ecfb0d 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -1377,4 +1377,7 @@ int __sys_getsockopt(int fd, int level, int optname, char __user *optval,
+ 		int __user *optlen);
+ int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
+ 		int optlen);
++//Custom My syscall
++asmlinkage long sys_s2_encrypt(char __user *msg, int key);
++
+ #endif
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 4df609be42d0..bfecc01b6306 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -53,6 +53,7 @@ obj-y += rcu/
+ obj-y += livepatch/
+ obj-y += dma/
+ obj-y += entry/
++obj-y += my_syscall/
+ 
+ obj-$(CONFIG_KCMP) += kcmp.o
+ obj-$(CONFIG_FREEZER) += freezer.o
+diff --git a/kernel/relay.c b/kernel/relay.c
+index d1a67fbb819d..7e80feae4a48 100644
+--- a/kernel/relay.c
++++ b/kernel/relay.c
+@@ -8,10 +8,11 @@
+  *
+  * Moved to kernel/relay.c by Paul Mundt, 2006.
+  * November 2006 - CPU hotplug support by Mathieu Desnoyers
+- * 	(mathieu.desnoyers@polymtl.ca)
++ * (mathieu.desnoyers@polymtl.ca)
+  *
+  * This file is released under the GPL.
+  */
++/*MKND MODS 2021*/
+ #include <linux/errno.h>
+ #include <linux/stddef.h>
+ #include <linux/slab.h>
+diff --git a/net/socket.c b/net/socket.c
+index 4f2c6d2795d0..0ebd6387597a 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1789,6 +1789,7 @@ SYSCALL_DEFINE4(accept4, int, fd, struct sockaddr __user *, upeer_sockaddr,
+ SYSCALL_DEFINE3(accept, int, fd, struct sockaddr __user *, upeer_sockaddr,
+ 		int __user *, upeer_addrlen)
+ {
++	printk(KERN_INFO "My Message: accept() definition called");
+ 	return __sys_accept4(fd, upeer_sockaddr, upeer_addrlen, 0);
+ }
+ 
+@@ -1848,6 +1849,7 @@ int __sys_connect(int fd, struct sockaddr __user *uservaddr, int addrlen)
+ SYSCALL_DEFINE3(connect, int, fd, struct sockaddr __user *, uservaddr,
+ 		int, addrlen)
+ {
++	printk(KERN_INFO "My Message: connect() definition called");
+ 	return __sys_connect(fd, uservaddr, addrlen);
+ }
+ 
