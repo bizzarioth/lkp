@@ -45,36 +45,36 @@ struct entry {
 };
 
 struct rb_type {
-    struct rb_node node;
+    struct rb_node rnode;
     int val;
 };
 
 struct hash_node {
-    struct hlist_node node;
+    struct hlist_node hnode;
     int val;
     int key;
 };
 
 // HASH Table
-static void hash_insert(int val){
-    struct hash_node *h_node;
-    h_node->val=val;
-    h_node->key=val-1;
-    hash_add(h_tbl, &h_node->node, h_node->key );
-}
+//static void hash_insert(int val){
+//    struct hash_node *h_node;
+//    h_node->val=val;
+//    h_node->key=val-1;
+//    hash_add(h_tbl, &h_node->node, h_node->key );
+//}
 void hash_iterate(void){
     struct hash_node *cur;
     unsigned long bkt;
     printk(KERN_INFO "\nHashTable:");
-    hash_for_each(h_tbl, bkt, cur, node) {
+    hash_for_each(h_tbl, bkt, cur, hnode) {
         printk(KERN_INFO "val= %d", cur->val);
     }
 }
 void hash_cleaner(void){
     struct hash_node *cur;
     unsigned long bkt;
-    hash_for_each(h_tbl, bkt, cur, node) {
-        hash_del(&cur->node);
+    hash_for_each(h_tbl, bkt, cur, hnode) {
+        hash_del(&cur->hnode);
         kfree(cur);
     }    
 }
@@ -83,7 +83,7 @@ int rb_insert(struct rb_root *root, struct rb_type *entry){
     struct rb_node **new= &(root->rb_node), *parent = NULL;
     //where insert
     while(*new) {
-        struct rb_type *this = container_of(*new, struct rb_type, node);
+        struct rb_type *this = container_of(*new, struct rb_type, rnode);
         //int result = strcmp(vals->keystring, this->keystring);
         parent = *new;
         if (entry->val < this->val)
@@ -94,26 +94,26 @@ int rb_insert(struct rb_root *root, struct rb_type *entry){
             return -1;
     }
     /* Add new node and rebalance tree. */
-    rb_link_node(&entry->node, parent, new);
-    rb_insert_color(&entry->node, root);
+    rb_link_node(&entry->rnode, parent, new);
+    rb_insert_color(&entry->rnode, root);
     return 0;
 }
 void rb_iterate(void){
-    struct rb_node *node;
-    node = rb_first(&rb_tree);
+    struct rb_node *tnode;
+    tnode = rb_first(&rb_tree);
     printk(KERN_INFO "\nRED_BLACK Tree::");
-    while(node){
-        printk(KERN_INFO "val=%d ", rb_entry(node, struct rb_type, node)->val);
-        node = rb_next(node);
+    while(tnode){
+        printk(KERN_INFO "val=%d ", rb_entry(tnode, struct rb_type, rnode)->val);
+        tnode = rb_next(tnode);
     }
 }
 void rb_cleaner(void){
-    struct rb_node *node;
-    node = rb_first(&rb_tree);
-    while(node){
-        rb_erase(node, &rb_tree);
-        kfree(node);
-        node = rb_next(node);
+    struct rb_node *tnode;
+    tnode = rb_first(&rb_tree);
+    while(tnode){
+        rb_erase(tnode, &rb_tree);
+        kfree(tnode);
+        tnode = rb_next(tnode);
     }   
 }
 //RADIX TREE
@@ -176,7 +176,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
     }
     len += sprintf(buf,"\nHASHTABLE : ");
     
-    hash_for_each(h_tbl, bkt, cur, node) {
+    hash_for_each(h_tbl, bkt, cur, hnode) {
         len += sprintf(buf + len,"%d, ",cur->val);
     }
     
@@ -230,21 +230,25 @@ static int store_value(int val)
      * return corresponding error code in error.h (e.g., -ENOMEM).
      */
     struct entry *List_node = kmalloc(sizeof(*List_node), GFP_KERNEL);
+    struct hash_node *hn=kmalloc(sizeof(*hn),GFP_KERNEL);
+    struct rb_type *rt=kmalloc(sizeof(*rt),GFP_KERNEL);
+
     if(!List_node && sizeof(*List_node))  return -ENOMEM;
     List_node->val = val;
     INIT_LIST_HEAD(&List_node->list);
     list_add_tail(&List_node->list, &mylist);
 
-    struct hash_node *hn=kmalloc(sizeof(*hn),GFP_KERNEL);
-    
     if(!hn && sizeof(*hn)) return -ENOMEM;
-    hash_insert(val);
-    struct rb_type *rt=kmalloc(sizeof(*rt),GFP_KERNEL);
+    //hash_insert(val);
+    hn->val=val;
+    hn->key=val-1;
+    hash_add(h_tbl, &hn->hnode, hn->key );
+
     if(!rt && sizeof(*rt)) return -ENOMEM;
     rt->val=val;
     rb_insert(&rb_tree,rt);
     
-    rad_insert(val);
+    //rad_insert(val);
     xa_store(&myxarr, val, xa_mk_value(val), GFP_KERNEL);
     return 0;
 }
@@ -252,14 +256,15 @@ static void test_linked_list(void){
     //Printer
     struct list_head *p_head;
     struct entry *lnode;
+    printk(KERN_INFO "Linked List : ");
     list_for_each(p_head, &mylist)
     {
         lnode = list_entry(p_head, struct entry, list);
-        printk(KERN_INFO "list detail value: %d \n",lnode->val);
+        printk(KERN_INFO "%d, ",lnode->val);
     }
     hash_iterate();
     rb_iterate();
-    rad_iterate();
+    //rad_iterate();
     xa_iter();
 }
 
@@ -274,7 +279,7 @@ static void destroy_linked_list_and_free(void){
     }
     hash_cleaner();
     rb_cleaner();
-    rad_cleaner();
+    //rad_cleaner();
     xa_cleaner();
 }
 static int parse_params(void)
