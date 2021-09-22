@@ -175,13 +175,13 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
         len += sprintf(buf + len,"%d, ",ln->val);
         //printk(KERN_DEBUG "%d\n", node->val);
     }
-    len += sprintf(buf,"\nHASHTABLE : ");
+    len += sprintf(buf+len,"\nHASHTABLE : ");
     
     hash_for_each(h_tbl, bkt, cur, hnode) {
         len += sprintf(buf + len,"%d, ",cur->val);
     }
     
-    len+= sprintf(buf, "\nRed_Black Tree : ");
+    len+= sprintf(buf+len, "\nRed_Black Tree : ");
     rt=rb_first(&rb_tree);
     while(rt){
         len+=sprintf(buf+len, "%d, ", rb_entry(rt, struct rb_type, rnode)->val);
@@ -193,6 +193,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
     xa_for_each(&myxarr, i, entry){
         len += sprintf(buf + len,"%ld, ",xa_to_value(entry));
     }
+    
     len += sprintf(buf + len, "\n");
 
     if(copy_to_user(ubuf,buf,len)) return -EFAULT;
@@ -209,17 +210,6 @@ static const struct proc_ops myops =
     .proc_lseek = seq_lseek,
     .proc_release = single_release,
 };
-
-static int simple_init(void)
-{
-    ent=proc_create("proj2",0,NULL,&myops);
-    return 0;
-}
-
-static void simple_cleanup(void)
-{
-    proc_remove(ent);
-}
 
 static int store_value(int val)
 {
@@ -267,6 +257,7 @@ static void test_linked_list(void){
     rb_iterate();
     //rad_iterate();
     xa_iter();
+    printk(KERN_INFO "\n");
 }
 
 static void destroy_linked_list_and_free(void){
