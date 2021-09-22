@@ -62,7 +62,7 @@ struct rad_entry{
 };
 struct x_node{
     int val;
-}
+};
 
 // HASH Table
 static void hash_insert(int val){
@@ -71,7 +71,7 @@ static void hash_insert(int val){
     h_node->key=val-1;
     hash_add(h_tbl, &h_node->node, h_node->key );
 }
-void hash_iterate(){
+void hash_iterate(void){
     struct hash_node *cur;
     unsigned long bkt;
     printk(KERN_INFO "\nHashTable:");
@@ -79,11 +79,11 @@ void hash_iterate(){
         printk(KERN_INFO "val= %d", cur->val);
     }
 }
-void hash_cleaner(){
+void hash_cleaner(void){
     struct hash_node *cur;
     unsigned long bkt;
     hash_for_each(h_tbl, bkt, cur, node) {
-        hash_del(cur->node);
+        hash_del(&cur->node);
         kfree(cur);
     }    
 }
@@ -93,21 +93,21 @@ int rb_insert(struct rb_root *root, struct rb_type *entry){
     //where insert
     while(*new) {
         struct rb_type *this = container_of(*new, struct rb_type, node);
-        int result = strcmp(vals->keystring, this->keystring);
+        //int result = strcmp(vals->keystring, this->keystring);
         parent = *new;
-        if (result < 0)
+        if (entry->val < this->val)
             new = &((*new)->rb_left);
-        else if (result > 0)
+        else if (entry->val > this->val)
             new = &((*new)->rb_right);
         else
             return FALSE;
     }
     /* Add new node and rebalance tree. */
-    rb_link_node(&vals->node, parent, new);
-    rb_insert_color(&vals->node, root);
-    return TRUE;
+    rb_link_node(&entry->node, parent, new);
+    rb_insert_color(&entry->node, root);
+    return 0;
 }
-void rb_iterate(){
+void rb_iterate(void){
     struct rb_node *node;
     node = rb_first(&rb_tree);
     printk(KERN_INFO "\nRED_BLACK Tree::");
@@ -116,7 +116,7 @@ void rb_iterate(){
         node = rb_next(node)
     }
 }
-void rb_cleaner(){
+void rb_cleaner(void){
     struct rb_node *node;
     node = rb_first(&rb_tree);
     while(node){
@@ -133,15 +133,15 @@ void rad_insert(int val){
     radix_tree_preload_end();
     return 0;
 }
-void rad_iterate(){
+void rad_iterate(void){
 }
-void rad_cleaner(){
+void rad_cleaner(void){
 
 }
 
 //XArray
 
-void xa_iter(){
+void xa_iter(void){
     unsigned long bkt=0;
     struct xarray *entry;
     printk(KERN_INFO "\nXARRAY::");
@@ -149,7 +149,7 @@ void xa_iter(){
         printk(KERN_INFO " %ld, ",xa_to_value(entry));
     }
 }
-void xa_cleaner(){
+void xa_cleaner(void){
     unsigned long bkt=0;
     struct xarray *entry;
     xa_for_each(&myxarr, bkt, entry){
