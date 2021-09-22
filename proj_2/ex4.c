@@ -16,12 +16,10 @@
 #include <linux/xarray.h>
 
 #define BUFSIZE  1000
-#define HASH_BITS 8
+#define my_hash_bits 8
 
 
 static char *int_str;
-static struct proc_dir_entry *ent;
-char buf[BUFSIZE];
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("[Mukund]");
@@ -32,8 +30,8 @@ MODULE_PARM_DESC(int_str, "A comma-separated list of integers");
 
 static LIST_HEAD(mylist);
 
-static DEFINE_HASHTABLE(h_tbl, HASH_BITS);
-DECLARE_HASHTABLE(h_tbl, HASH_BITS);
+static DEFINE_HASHTABLE(h_tbl, my_hash_bits);
+//DECLARE_HASHTABLE(h_tbl, my_hash_bits);
 
 RADIX_TREE(rad_tree, GFP_KERNEL);
 
@@ -55,13 +53,6 @@ struct hash_node {
     struct hlist_node node;
     int val;
     int key;
-};
-
-struct rad_entry{
-    int val;
-};
-struct x_node{
-    int val;
 };
 
 // HASH Table
@@ -89,7 +80,7 @@ void hash_cleaner(void){
 }
 //RB Tree insert and Iterate
 int rb_insert(struct rb_root *root, struct rb_type *entry){
-    struct rb_node **new= &(root->rb_node), *par = NULL;
+    struct rb_node **new= &(root->rb_node), *parent = NULL;
     //where insert
     while(*new) {
         struct rb_type *this = container_of(*new, struct rb_type, node);
@@ -100,7 +91,7 @@ int rb_insert(struct rb_root *root, struct rb_type *entry){
         else if (entry->val > this->val)
             new = &((*new)->rb_right);
         else
-            return FALSE;
+            return -1;
     }
     /* Add new node and rebalance tree. */
     rb_link_node(&entry->node, parent, new);
@@ -112,8 +103,8 @@ void rb_iterate(void){
     node = rb_first(&rb_tree);
     printk(KERN_INFO "\nRED_BLACK Tree::");
     while(node){
-        printk(KERN_INFO "val=%d ", rb_entry(node, struct rb_type, node)->key);
-        node = rb_next(node)
+        printk(KERN_INFO "val=%d ", rb_entry(node, struct rb_type, node)->val);
+        node = rb_next(node);
     }
 }
 void rb_cleaner(void){
@@ -122,11 +113,11 @@ void rb_cleaner(void){
     while(node){
         rb_erase(node, &rb_tree);
         kfree(node);
-        node = rb_next(node)
+        node = rb_next(node);
     }   
 }
 //RADIX TREE
-void rad_insert(int val){
+int rad_insert(int val){
     
     if(radix_tree_preload(GFP_KERNEL)<0) return -ENOMEM;
     radix_tree_insert(&rad_tree, val, xa_mk_value(val));
@@ -157,51 +148,47 @@ void xa_cleaner(void){
         xa_release(&myxarr, bkt);
     }
 }
-static const struct proc_ops myops = 
-{
-    //.owner = THIS_MODULE,
-    .proc_read = myread,
-    .proc_open = proc_opener,
-    .proc_release = single_release,
-};
 
 static int proc_show(struct seq_file *m, void *v){
-    seq_printf(m, "Hello proj2!\n");
-    return 0
+    //seq_printf(m, "Hello proj2!\n");
+    return 0;
 }
 static int proc_opener(struct inode *in, struct file *f){
     return single_open(f, proc_show, NULL);
 }
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
     char buf[BUFSIZE];
-    int len=0,i=0;
+    int len=0;
     struct entry *ln;
-    unsigned long bkt;
+    unsigned long bkt,i=0;
+    struct hash_node *cur;
+    struct rb_node *rt;
+    struct xarray *entry;
+    
+
     if(*ppos > 0 || count < BUFSIZE)
         return 0;
     len += sprintf(buf,"\nLinked List : ");
-    list_for_each_entry(node, &mylist, list)
+    list_for_each_entry(ln, &mylist, list)
     {
         len += sprintf(buf + len,"%d, ",node->val);
         //printk(KERN_DEBUG "%d\n", node->val);
     }
     len += sprintf(buf,"\nHASHTABLE : ");
-    struct hash_node *cur;
+    
     hash_for_each(h_tbl, bkt, cur, node) {
         len += sprintf(buf + len,"%d, ",cur->val);
     }
     
     len+= sprintf(buf, "\nRed_Black Tree : ");
-    struct rb_node *rt;
     rt=rb_first(&rb_tree);
     while(rt){
-        len+=sprintf(buf+len, "%d, ", rb_entry(rt, struct rb_type, node)->key);
+        len+=sprintf(buf+len, "%d, ", rb_entry(rt, struct rb_type, node)->val);
         rt=rb_next(rt);
     }
 
     len+=sprintf(buf+len, "\nXArray : ");
     i=0;
-    struct xarray *entry;
     xa_for_each(&myxarr, i, entry){
         len += sprintf(buf + len,"%ld, ",xa_to_value(entry));
     }
@@ -212,6 +199,15 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
     *ppos = len;
     return len;
 }
+
+static const struct proc_ops myops = 
+{
+    //.owner = THIS_MODULE,
+    .proc_open = proc_opener,
+    .proc_read = myread,
+    .proc_lseek = seq_lseek,
+    .proc_release = single_release,
+};
 
 static int simple_init(void)
 {
@@ -249,7 +245,7 @@ static int store_value(int val)
     rb_insert(&rb_tree,rt);
     
     rad_insert(val);
-    xa_store(&myxarr, val, xa_mk_valu(val), GFP_KERNEL);
+    xa_store(&myxarr, val, xa_mk_value(val), GFP_KERNEL);
     return 0;
 }
 static void test_linked_list(void){
@@ -350,18 +346,19 @@ static void cleanup(void)
     printk(KERN_INFO "\nCleaning up...\n");
 
     destroy_linked_list_and_free();
-    simple_cleanup();
+
 }
 
 static int __init ex3_init(void)
 {
     int err = 0;
+    proc_create("proj2", 0, NULL, &myops);
 
     if (!int_str) {
         printk(KERN_INFO "Missing \'int_str\' parameter, exiting\n");
         return -1;
     }
-    err=simple_init();
+    
     /* [X17: point 1]
      * Explain following in here.
      *  We call the parse_params() method and store the status in err variable.
@@ -381,13 +378,16 @@ out:
      * Explain following in here.
      *  This deletes the list and nodes created in memory
      */
-    cleanup();
     return err;
 }
 
 static void __exit ex3_exit(void)
 {
+    cleanup();
+    remove_proc_entry("proj2", NULL);
     return;
 }
+
 module_init(ex3_init);
+
 module_exit(ex3_exit);
