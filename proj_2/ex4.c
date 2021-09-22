@@ -29,6 +29,7 @@ module_param(int_str, charp, S_IRUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(int_str, "A comma-separated list of integers");
 
 static LIST_HEAD(mylist);
+int bkt=0;
 
 static DEFINE_HASHTABLE(h_tbl, my_hash_bits);
 //DECLARE_HASHTABLE(h_tbl, my_hash_bits);
@@ -160,18 +161,18 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
     char buf[BUFSIZE];
     int len=0;
     struct entry *ln;
-    unsigned long bkt,i=0;
+    unsigned long int i=0;
     struct hash_node *cur;
     struct rb_node *rt;
     struct xarray *entry;
     
-
     if(*ppos > 0 || count < BUFSIZE)
         return 0;
+    
     len += sprintf(buf,"\nLinked List : ");
     list_for_each_entry(ln, &mylist, list)
     {
-        len += sprintf(buf + len,"%d, ",node->val);
+        len += sprintf(buf + len,"%d, ",ln->val);
         //printk(KERN_DEBUG "%d\n", node->val);
     }
     len += sprintf(buf,"\nHASHTABLE : ");
@@ -183,7 +184,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
     len+= sprintf(buf, "\nRed_Black Tree : ");
     rt=rb_first(&rb_tree);
     while(rt){
-        len+=sprintf(buf+len, "%d, ", rb_entry(rt, struct rb_type, node)->val);
+        len+=sprintf(buf+len, "%d, ", rb_entry(rt, struct rb_type, rnode)->val);
         rt=rb_next(rt);
     }
 
