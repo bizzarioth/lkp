@@ -1,0 +1,1 @@
+cmd_/home/mukundvt/repos/lkp/exercise/ex_3/Module.symvers := sed 's/\.ko$$/\.o/' /home/mukundvt/repos/lkp/exercise/ex_3/modules.order | scripts/mod/modpost    -o /home/mukundvt/repos/lkp/exercise/ex_3/Module.symvers -e -i Module.symvers   -T -
