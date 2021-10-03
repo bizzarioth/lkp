@@ -51,5 +51,6 @@ clean:
 
 ## [M10: point 1]
 #  Explain following in here
+r
 #  ...
 .PHONY: all clean

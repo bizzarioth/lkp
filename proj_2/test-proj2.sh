@@ -6,4 +6,8 @@ echo "---PROC FILE---"
 cat /proc/proj2
 echo "---PROC ENDS---"
 sudo rmmod proj2.ko
+<<<<<<< Updated upstream
 sudo make clean
+=======
+sudo make clean
+>>>>>>> Stashed changes

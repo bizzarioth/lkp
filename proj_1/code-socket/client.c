@@ -33,6 +33,7 @@ int main(int argc, const char *argv[])
 
 	/* [C2: point 1]
 	 * Explain following in here.
+	 This avoids junk values at creation by allocating static storage. It initiates with 0 values
 	 */
 	memset(&serv_addr, '0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -40,6 +41,8 @@ int main(int argc, const char *argv[])
 
 	/* [C3: point 1]
 	 * Explain following in here.
+	 The ip adress is being hardcoded and passed to AF_INET protocol and passed along the serv_addr struct.
+
 	 */
 	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
 		printf("\nInvalid address/ Address not supported \n");
@@ -48,6 +51,8 @@ int main(int argc, const char *argv[])
 
 	/* [C4: point 1]
 	 * Explain following in here.
+	 Connect requests the connection to the server sockets.
+	 0 is returned for a success
 	 */
 	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 		printf("\nConnection Failed \n");
@@ -57,18 +62,22 @@ int main(int argc, const char *argv[])
 
 	/* [C5: point 1]
 	 * Explain following in here.
+	 The program waits for user input
+	 Ideally the client is supposed to ping the server or send a message to the server, before continuing
 	 */
 	printf("Press any key to continue...\n");
 	getchar();
 
 	/* [C6: point 1]
 	 * Explain following in here.
+	 send() transmits the mesage to socket
 	 */
 	send(sock , hello , strlen(hello) , 0 );
 	printf("Hello message sent\n");
 
 	/* [C7: point 1]
 	 * Explain following in here.
+	 read() dunction reads from the socket file descriptor into buffer
 	 */
 	read( sock , buffer, 1024);
 	printf("Message from a server: %s\n",buffer );

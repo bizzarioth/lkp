@@ -342,16 +342,26 @@ static int __init ex3_init(void)
 		return -1;
 	}
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 	err = parse_params();
 	if (err)
 		goto out;
 
 	run_tests();
+<<<<<<< Updated upstream
 out:
 	
 	//cleanup();
 	return err;
+=======
+	out:
+		
+		//cleanup();
+		return err;
+>>>>>>> Stashed changes
 }
 
 static void __exit ex3_exit(void)
