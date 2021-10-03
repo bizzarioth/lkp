@@ -10,7 +10,7 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 static int proc_show(struct seq_file *m, void *v){
-  //printk("Hello world!\n");
+  printk(KERN_INFO "Hello world kmesg!\n");
   seq_printf(m, "Hello world!!\n");
   return 0;
 }
@@ -35,7 +35,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
 static const struct proc_ops myops = 
 {
   .proc_open = proc_opener,
-  .proc_read = myread,
+  .proc_read = seq_read,//myread,
   //.proc_lseek = seq_lseek,
   .proc_release = single_release,
 };
