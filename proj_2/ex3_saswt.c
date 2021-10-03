@@ -343,7 +343,10 @@ static int __init ex3_init(void)
 	}
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 	err = parse_params();
@@ -352,15 +355,21 @@ static int __init ex3_init(void)
 
 	run_tests();
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 out:
 	
 	//cleanup();
 	return err;
 =======
+=======
+>>>>>>> Stashed changes
 	out:
 		
 		//cleanup();
 		return err;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 }
 

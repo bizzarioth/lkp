@@ -19,8 +19,13 @@ static int proc_opener(struct inode *in, struct file *f){
 }
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   char buf[100]="myRead says Hello!\n\0";;
   int len=0;
+=======
+  int len=0;
+  char buf[100]="myRead says Hello!\n\0";
+>>>>>>> Stashed changes
 =======
   int len=0;
   char buf[100]="myRead says Hello!\n\0";
@@ -45,7 +50,12 @@ static const struct proc_ops myops =
 };
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 static int __int proj_init(void) {
+=======
+
+static int __init proj_init(void) {
+>>>>>>> Stashed changes
 =======
 
 static int __init proj_init(void) {
@@ -63,9 +73,14 @@ static void __exit proj_exit(void) {
 }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 module_init(proj_init);
 module_exit(proj_exit);
+=======
+module_init(proj_init);
+module_exit(proj_exit);
+>>>>>>> Stashed changes
 =======
 module_init(proj_init);
 module_exit(proj_exit);
