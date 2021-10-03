@@ -8,7 +8,11 @@ echo "---PROC ENDS---"
 sudo rmmod proj2.ko
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 sudo make clean
+=======
+sudo make clean
+>>>>>>> Stashed changes
 =======
 sudo make clean
 >>>>>>> Stashed changes

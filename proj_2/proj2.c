@@ -123,6 +123,7 @@ int rad_insert(int val){
     if(radix_tree_preload(GFP_KERNEL)<0) return -ENOMEM;
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     radix_tree_insert(&rad_tree, val-1, xa_mk_value(val));
 =======
@@ -134,10 +135,14 @@ int rad_insert(int val){
 =======
     radix_tree_insert(&rad_tree, val, xa_mk_value(val));
 >>>>>>> Stashed changes
+=======
+    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
+>>>>>>> Stashed changes
     radix_tree_preload_end();
     return 0;
 }
 void rad_iterate(void){
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< HEAD
@@ -151,6 +156,8 @@ void rad_iterate(void){
 	printk(KERN_INFO "\n");
 =======
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -270,11 +277,15 @@ static int store_value(int val)
     
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     rad_insert(val);
 =======
     //rad_insert(val);
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+    //rad_insert(val);
+>>>>>>> Stashed changes
 =======
     //rad_insert(val);
 >>>>>>> Stashed changes
@@ -298,11 +309,15 @@ static void test_linked_list(void){
     rb_iterate();
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     rad_iterate();
 =======
     //rad_iterate();
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+    //rad_iterate();
+>>>>>>> Stashed changes
 =======
     //rad_iterate();
 >>>>>>> Stashed changes
@@ -443,10 +458,13 @@ module_init(ex3_init);
 module_exit(ex3_exit);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 
 =======
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
