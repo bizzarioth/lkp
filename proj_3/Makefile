@@ -1,8 +1,8 @@
-MODULE   = perftop
+MODULE = perftop
 
 obj-m += $(MODULE).o
 
-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build 
 
 PWD := $(shell pwd)
 
@@ -10,11 +10,12 @@ all: $(MODULE)
 
 
 %.o: %.c
-        @echo "  CC      $<"
-        @$(CC) -c $< -o $@
+	@echo "  CC      $<"
+	@$(CC) -c $< -o $@
 
 $(MODULE):
-        $(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 clean:
-        $(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+
