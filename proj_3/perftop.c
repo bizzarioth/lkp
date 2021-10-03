@@ -20,7 +20,7 @@ static int proc_opener(struct inode *in, struct file *f){
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 
   int len=0;
-  char buf[100]="myRead says Hello!\n\0";
+  char buf[100]="myRead says Hello!";
 
   if(*ppos > 0 || count < 100)
       return 0;
