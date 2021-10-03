@@ -18,18 +18,9 @@ static int proc_opener(struct inode *in, struct file *f){
   return single_open(f, proc_show, NULL);
 }
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  char buf[100]="myRead says Hello!\n\0";;
-  int len=0;
-=======
+
   int len=0;
   char buf[100]="myRead says Hello!\n\0";
->>>>>>> Stashed changes
-=======
-  int len=0;
-  char buf[100]="myRead says Hello!\n\0";
->>>>>>> Stashed changes
 
   if(*ppos > 0 || count < 100)
       return 0;
@@ -49,17 +40,8 @@ static const struct proc_ops myops =
   .proc_release = single_release,
 };
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-static int __int proj_init(void) {
-=======
 
 static int __init proj_init(void) {
->>>>>>> Stashed changes
-=======
-
-static int __init proj_init(void) {
->>>>>>> Stashed changes
   int err=0;
   proc_create("perftop", 0, NULL, &myops);
 
@@ -72,16 +54,5 @@ static void __exit proj_exit(void) {
   return;
 }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
 module_init(proj_init);
 module_exit(proj_exit);
-=======
-module_init(proj_init);
-module_exit(proj_exit);
->>>>>>> Stashed changes
-=======
-module_init(proj_init);
-module_exit(proj_exit);
->>>>>>> Stashed changes

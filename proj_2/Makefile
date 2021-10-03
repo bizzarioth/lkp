@@ -1,11 +1,15 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 
 MODULE	 = proj2
 =======
 MODULE	 = ex4
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+MODULE	 = proj2
+>>>>>>> Stashed changes
 =======
 MODULE	 = proj2
 >>>>>>> Stashed changes
@@ -23,10 +27,14 @@ all: $(MODULE)
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 =======
 
 >>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
+=======
+
+>>>>>>> Stashed changes
 =======
 
 >>>>>>> Stashed changes

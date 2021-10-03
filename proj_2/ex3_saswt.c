@@ -344,7 +344,10 @@ static int __init ex3_init(void)
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -356,6 +359,7 @@ static int __init ex3_init(void)
 	run_tests();
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 out:
 	
 	//cleanup();
@@ -363,11 +367,16 @@ out:
 =======
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 	out:
 		
 		//cleanup();
 		return err;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
