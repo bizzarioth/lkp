@@ -121,11 +121,16 @@ void rb_cleaner(void){
 int rad_insert(int val){
     
     if(radix_tree_preload(GFP_KERNEL)<0) return -ENOMEM;
+<<<<<<< HEAD
     radix_tree_insert(&rad_tree, val-1, xa_mk_value(val));
+=======
+    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
+>>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
     radix_tree_preload_end();
     return 0;
 }
 void rad_iterate(void){
+<<<<<<< HEAD
 	
 	unsigned long i=0;
 	void *	arr = kmalloc(10*sizeof(void*), GFP_KERNEL);
@@ -134,6 +139,8 @@ void rad_iterate(void){
 	printk(KERN_INFO "\nRADIX : ");
 	for(i=0;i<5;i++)     printk(KERN_INFO "%d, ",*(arr+i));
 	printk(KERN_INFO "\n");
+=======
+>>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
 }
 void rad_cleaner(void){
 
@@ -247,7 +254,11 @@ static int store_value(int val)
     rt->val=val;
     rb_insert(&rb_tree,rt);
     
+<<<<<<< HEAD
     rad_insert(val);
+=======
+    //rad_insert(val);
+>>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
     xa_store(&myxarr, val, xa_mk_value(val), GFP_KERNEL);
     return 0;
 }
@@ -263,7 +274,11 @@ static void test_linked_list(void){
     }
     hash_iterate();
     rb_iterate();
+<<<<<<< HEAD
     rad_iterate();
+=======
+    //rad_iterate();
+>>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
     xa_iter();
     printk(KERN_INFO "\n");
 }
@@ -396,4 +411,7 @@ static void __exit ex3_exit(void)
 module_init(ex3_init);
 
 module_exit(ex3_exit);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
