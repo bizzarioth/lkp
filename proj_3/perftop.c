@@ -11,7 +11,7 @@ MODULE_DESCRIPTION("Project - 3");
 
 static int proc_show(struct seq_file *m, void *v){
   printk(KERN_INFO "Hello world kmesg!\n");
-  seq_printf(m, "Hello world!!\n");
+  seq_printf(m, "Hello world\n");
   return 0;
 }
 static int proc_opener(struct inode *in, struct file *f){
