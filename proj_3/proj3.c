@@ -18,10 +18,10 @@ static int proc_opener(struct inode *in, struct file *f){
   return single_open(f, proc_show, NULL);
 }
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
-  char buf[BUFSIZE];
+  char buf[100]="myRead says Hello!\n\0";;
   int len=0;
 
-  if(*ppos > 0 || count < BUFSIZE)
+  if(*ppos > 0 || count < 100)
       return 0;
   len += sprintf(buf + len, "\n");
 
@@ -33,9 +33,8 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
 
 static const struct proc_ops myops = 
 {
-  //.owner = THIS_MODULE,
   .proc_open = proc_opener,
-  //.proc_read = myread,
+  .proc_read = myread,
   //.proc_lseek = seq_lseek,
   .proc_release = single_release,
 };
