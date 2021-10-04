@@ -12,7 +12,7 @@
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
 static struct rq *rq;
-static struct task_struct * task_pid; 
+static struct task_struct * my_task; 
 
 /*
 pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
@@ -67,9 +67,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     /* A dump_stack() here will give a stack backtrace */
   
   rq = cpu_rq(cpu);
-  task_pid = pick_next_task_fair(rq,NULL,NULL);
-  printk(KERN_INFO "KM PID! %d\n",task_pid->pid);
-  //hash_inc(task_pid->pid);
+  my_task = pick_next_task_fair(rq,NULL,NULL);
+  printk(KERN_INFO "KM PID! %d\n",my_task->pid);
+  //hash_inc(my_task->pid);
   return 0;
 }
 
