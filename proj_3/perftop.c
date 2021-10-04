@@ -55,23 +55,15 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
   #endif
-  #ifdef CONFIG_ARM64
-    pr_info("<%s> p->addr = 0x%p, pc = 0x%lx, pstate = 0x%lx\n",
-      p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
-  #endif
     /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
   printk(KERN_INFO "RSI addr = %lx \n",regs->si);
-  add=regs->si;
-  struct task_struct mytask;
-  struct task_struct *myt ;
-  if(add){
-    my_task = (task_struct*)add;
+
+  if((regs->si)==0) return 0;
+
+  my_task = (task_struct*)regs->si;
     printk(KERN_INFO "KM PID: %d\n",my_task->pid);
-  
-  }else return 0;
-  
-  //hash_inc(my_task->pid);
+
   return 0;
 }
 
