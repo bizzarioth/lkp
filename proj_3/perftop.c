@@ -9,7 +9,7 @@
 
 #define MAX_SYMBOL_LEN  64
 static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
-
+static int counter=0;
 /* For each probe you need to allocate a kprobe structure */
 static struct kprobe kproc_open = {
   .symbol_name  = symbol,
@@ -46,12 +46,14 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
     p->symbol_name, p->addr, (long)regs->pstate);
 #endif
+  counter++;
 }
 
 
 static int proc_show(struct seq_file *m, void *v){
   printk(KERN_INFO "Hello world kmesg!\n");
   seq_printf(m, "Hello world\n");
+  seq_printf(m, "%d\n",counter);
   return 0;
 }
 static int proc_opener(struct inode *in, struct file *f){
