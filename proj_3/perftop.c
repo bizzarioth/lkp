@@ -51,7 +51,7 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
 
 
 static int proc_show(struct seq_file *m, void *v){
-  printk(KERN_INFO "Hello world kmesg!\n");
+  printk(KERN_INFO "Hello world kmesg! %d\n",counter);
   seq_printf(m, "Hello world\n");
   seq_printf(m, "%d\n",counter);
   return 0;
