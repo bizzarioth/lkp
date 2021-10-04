@@ -9,6 +9,7 @@
 #include <linux/kprobes.h>
 
 #define MAX_SYMBOL_LEN  64
+#define MAX_b 8
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
 static struct rq *rq;
@@ -25,8 +26,8 @@ static struct task_struct *__pick_next_task_fair(struct rq *rq)
 static int counter=0;
 
 // Initialize Hashtable
-#define bits 8
-static DEFINE_HASHTABLE(myhashtable,bits);
+
+static DEFINE_HASHTABLE(myhashtable,MAX_b);
 
 int or = 4;
 int bkt = 0;
