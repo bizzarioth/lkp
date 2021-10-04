@@ -20,8 +20,7 @@ static struct task_struct * my_task;
 static int counter=0;
 
 // Initialize Hashtable
-
-//static DEFINE_HASHTABLE(myhashtable,MAX_b);
+static DEFINE_HASHTABLE(myhashtable,MAX_b);
 
 int or = 4;
 int bkt = 0;
