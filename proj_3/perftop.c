@@ -15,22 +15,13 @@
 #define MAX_b 8
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
-static struct rq *rq;
+
 static struct task_struct * my_task; 
-
-/*
-pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
-
-static struct task_struct *__pick_next_task_fair(struct rq *rq)
-{
-  return pick_next_task_fair(rq, NULL, NULL);
-}
-*/
 static int counter=0;
 
 // Initialize Hashtable
 
-static DEFINE_HASHTABLE(myhashtable,MAX_b);
+//static DEFINE_HASHTABLE(myhashtable,MAX_b);
 
 int or = 4;
 int bkt = 0;
@@ -59,7 +50,7 @@ void hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  int cpu = smp_processor_id();
+  int add=0;
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
@@ -69,10 +60,17 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
       p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
   #endif
     /* A dump_stack() here will give a stack backtrace */
+  //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
+  printk(KERN_INFO "RSI addr = %lx \n",regs->si);
+  add=regs->si;
+  struct task_struct mytask;
+  struct task_struct *myt ;
+  if(add){
+    my_task = (task_struct*)add;
+    printk(KERN_INFO "KM PID: %d\n",my_task->pid);
   
-  rq = cpu_rq(cpu);
-  my_task = pick_next_task_fair(rq,NULL,NULL);
-  printk(KERN_INFO "KM PID! %d\n",my_task->pid);
+  }else return 0;
+  
   //hash_inc(my_task->pid);
   return 0;
 }
