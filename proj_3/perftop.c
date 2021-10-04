@@ -5,8 +5,11 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/hashtable.h>
 
 #include <linux/kprobes.h>
+#include <asm/uaccess.h>
 
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
