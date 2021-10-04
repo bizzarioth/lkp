@@ -13,6 +13,7 @@
 
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
+#define mBUFSIZE  2000
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
 
@@ -20,8 +21,7 @@ static struct task_struct * my_task;
 static int counter=0;
 
 // Initialize Hashtable
-
-//static DEFINE_HASHTABLE(myhashtable,MAX_b);
+static DEFINE_HASHTABLE(myhashtable,MAX_b);
 
 int or = 4;
 int bkt = 0;
@@ -49,6 +49,7 @@ int hash_inc(int pid){
     return -ENOMEM;
   }
   //search pid(key)
+
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
     if(pid==tnode->key){
@@ -57,6 +58,7 @@ int hash_inc(int pid){
       return 0;
       }
   }
+
   //create if doesnot exist
   hnode->key = pid;
   hnode->val = 1;
@@ -67,7 +69,7 @@ int hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  int add=0;
+  
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
@@ -80,8 +82,10 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 
   my_task = (struct task_struct *)regs->si;
   printk(KERN_INFO "KM PID: %d\n",my_task->pid);
+
   hash_inc((int)my_task->pid);
 
+  counter = my_task->pid;
   return 0;
 }
 
@@ -97,7 +101,7 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
     p->symbol_name, p->addr, (long)regs->pstate);
 #endif
-  counter++;
+  //counter++;
 }
 
 
@@ -113,17 +117,24 @@ static int proc_opener(struct inode *in, struct file *f){
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 
   int len=0;
-  char buf[100];
+  char buf[mBUFSIZE];
   struct hEntry *hnode;
 
-  if(*ppos > 0 || count < 100)
+
+  if(*ppos > 0 || count < mBUFSIZE)
       return 0;
-  len += sprintf(buf,"Hash Table: ");
+  len += sprintf(buf,"Hash Table: \n");
+  len += sprintf(buf," PID	|	Times Called\n");
+  
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
-    len += sprintf(buf + len,"PID: %d C: %d, ",hnode->key,hnode->val);
+    
+    len += sprintf(buf + len," %d	|	%d\n ",hnode->key,hnode->val);
+
   }
-  len += sprintf(buf + len, "\n");  
+
+  len += sprintf(buf + len, "\n");
+
   if(copy_to_user(ubuf,buf,len)) return -EFAULT;
 
   *ppos = len;
@@ -133,8 +144,9 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
 static const struct proc_ops myops = 
 {
   .proc_open = proc_opener,
-  .proc_read = myread,
-  //.proc_lseek = seq_lseek,
+//  .proc_read = seq_read,
+.proc_read = myread,
+  .proc_lseek = seq_lseek,
   .proc_release = single_release,
 };
 
