@@ -4,12 +4,38 @@
 
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/sched.h>
 
 #include <linux/kprobes.h>
 
 #define MAX_SYMBOL_LEN  64
-static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
+static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
+//static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
+static struct rq *rq;
+static struct task_struct * task_pid; 
+
+/*
+pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+
+static struct task_struct *__pick_next_task_fair(struct rq *rq)
+{
+  return pick_next_task_fair(rq, NULL, NULL);
+}
+*/
 static int counter=0;
+
+// Initialize Hashtable
+#define bits 8
+static DEFINE_HASHTABLE(myhashtable,bits);
+
+int or = 4;
+int bkt = 0;
+
+struct hEntry {
+  int val;
+  int key;
+  struct hlist_node hList;
+};
 /* For each probe you need to allocate a kprobe structure */
 static struct kprobe kproc_open = {
   .symbol_name  = symbol,
@@ -19,18 +45,31 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
+//Hash Table increment
+void hash_inc(int pid){
+  //search pid 
+    //increment
+  //create if doesnot exist
+}
+
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-#ifdef CONFIG_X86
-  pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
-    p->symbol_name, p->addr, regs->ip, regs->flags);
-#endif
-#ifdef CONFIG_ARM64
-  pr_info("<%s> p->addr = 0x%p, pc = 0x%lx, pstate = 0x%lx\n",
-    p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
-#endif
-  /* A dump_stack() here will give a stack backtrace */
+  int cpu = smp_processor_id();
+  #ifdef CONFIG_X86
+    pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
+      p->symbol_name, p->addr, regs->ip, regs->flags);
+  #endif
+  #ifdef CONFIG_ARM64
+    pr_info("<%s> p->addr = 0x%p, pc = 0x%lx, pstate = 0x%lx\n",
+      p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
+  #endif
+    /* A dump_stack() here will give a stack backtrace */
+  
+  rq = cpu_rq(cpu);
+  task_pid = pick_next_task_fair(rq,NULL,NULL);
+  printk(KERN_INFO "KM PID! %d\n",task_pid->pid);
+  //hash_inc(task_pid->pid);
   return 0;
 }
 
