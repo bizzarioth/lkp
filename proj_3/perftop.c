@@ -41,10 +41,27 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-void hash_inc(int pid){
-  //search pid 
-    //increment
+int hash_inc(int pid){
+  struct hEntry *tnode;
+  struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
+  if(!hnode && sizeof(*hnode))
+  {
+    return -ENOMEM;
+  }
+  //search pid(key)
+  hash_for_each(myhashtable, bkt, tnode, hList)
+  {
+    if(pid==tnode->key){
+      //found : increment
+      tnode->val++;
+      return 0;
+      }
+  }
   //create if doesnot exist
+  hnode->key = pid;
+  hnode->val = 1;
+  hash_add(myhashtable,&hnode->hList, hnode->key);
+  return 0;
 }
 
 /* kprobe pre_handler: called just before the probed instruction is executed */
@@ -61,8 +78,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 
   if((regs->si)==0) return 0;
 
-  my_task = (task_struct*)regs->si;
-    printk(KERN_INFO "KM PID: %d\n",my_task->pid);
+  my_task = (struct task_struct *)regs->si;
+  printk(KERN_INFO "KM PID: %d\n",my_task->pid);
+  hash_inc((int)my_task->pid);
 
   return 0;
 }
@@ -95,12 +113,17 @@ static int proc_opener(struct inode *in, struct file *f){
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 
   int len=0;
-  char buf[100]="myRead says Hello!";
+  char buf[100];
+  struct hEntry *hnode;
 
   if(*ppos > 0 || count < 100)
       return 0;
-  len += sprintf(buf + len, "\n");
-
+  len += sprintf(buf,"Hash Table: ");
+  hash_for_each(myhashtable, bkt, hnode, hList)
+  {
+    len += sprintf(buf + len,"PID: %d C: %d, ",hnode->key,hnode->val);
+  }
+  len += sprintf(buf + len, "\n");  
   if(copy_to_user(ubuf,buf,len)) return -EFAULT;
 
   *ppos = len;
@@ -110,7 +133,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
 static const struct proc_ops myops = 
 {
   .proc_open = proc_opener,
-  .proc_read = seq_read,//myread,
+  .proc_read = myread,
   //.proc_lseek = seq_lseek,
   .proc_release = single_release,
 };
