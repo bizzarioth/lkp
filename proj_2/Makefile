@@ -1,21 +1,4 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-
 MODULE	 = proj2
-=======
-MODULE	 = ex4
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
-MODULE	 = proj2
->>>>>>> Stashed changes
-=======
-MODULE	 = proj2
->>>>>>> Stashed changes
-=======
-MODULE	 = proj2
->>>>>>> Stashed changes
 
 obj-m += $(MODULE).o
 
@@ -25,22 +8,6 @@ PWD := $(shell pwd)
 
 all: $(MODULE)
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-=======
-
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
-
->>>>>>> Stashed changes
-=======
-
->>>>>>> Stashed changes
-=======
-
->>>>>>> Stashed changes
 %.o: %.c
 	@echo "  CC      $<"
 	@$(CC) -c $< -o $@

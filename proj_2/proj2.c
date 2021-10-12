@@ -121,48 +121,21 @@ void rb_cleaner(void){
 int rad_insert(int val){
     
     if(radix_tree_preload(GFP_KERNEL)<0) return -ENOMEM;
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
     radix_tree_insert(&rad_tree, val-1, xa_mk_value(val));
-=======
-    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
-    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
->>>>>>> Stashed changes
-=======
-    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
->>>>>>> Stashed changes
-=======
-    radix_tree_insert(&rad_tree, val, xa_mk_value(val));
->>>>>>> Stashed changes
     radix_tree_preload_end();
     return 0;
 }
 void rad_iterate(void){
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-	
+
 	unsigned long i=0;
 	void *	arr = kmalloc(10*sizeof(void*), GFP_KERNEL);
 	radix_tree_gang_lookup(&rad_tree, &arr, i,10);
 	i=0;
 	printk(KERN_INFO "\nRADIX : ");
-	for(i=0;i<5;i++)     printk(KERN_INFO "%d, ",*(arr+i));
+	for(i=0;i<5;i++)     printk(KERN_INFO "%d, ",((int *)arr)[i]);
 	printk(KERN_INFO "\n");
-=======
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 }
+
 void rad_cleaner(void){
 
 }
@@ -268,30 +241,21 @@ static int store_value(int val)
     if(!hn && sizeof(*hn)) return -ENOMEM;
     //hash_insert(val);
     hn->val=val;
-    hn->key=val-1;
+    /*
+    I am Chutiya,
+    Key should have been equal to the value, then output is correct
+    I submitted with key=val-1
+    Gives wrong output
+    */
+    hn->key=val;
     hash_add(h_tbl, &hn->hnode, hn->key );
 
     if(!rt && sizeof(*rt)) return -ENOMEM;
     rt->val=val;
     rb_insert(&rb_tree,rt);
-    
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
+
     rad_insert(val);
-=======
     //rad_insert(val);
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
-    //rad_insert(val);
->>>>>>> Stashed changes
-=======
-    //rad_insert(val);
->>>>>>> Stashed changes
-=======
-    //rad_insert(val);
->>>>>>> Stashed changes
     xa_store(&myxarr, val, xa_mk_value(val), GFP_KERNEL);
     return 0;
 }
@@ -307,23 +271,7 @@ static void test_linked_list(void){
     }
     hash_iterate();
     rb_iterate();
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-    rad_iterate();
-=======
     //rad_iterate();
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
-    //rad_iterate();
->>>>>>> Stashed changes
-=======
-    //rad_iterate();
->>>>>>> Stashed changes
-=======
-    //rad_iterate();
->>>>>>> Stashed changes
     xa_iter();
     printk(KERN_INFO "\n");
 }
@@ -456,16 +404,3 @@ static void __exit ex3_exit(void)
 module_init(ex3_init);
 
 module_exit(ex3_exit);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-
-=======
->>>>>>> 6a9c1ec7161423cc8a570b10b2766bdad15b1cea
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
