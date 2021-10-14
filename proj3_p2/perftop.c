@@ -69,19 +69,20 @@ int hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  
+  ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
   #endif
-    /* A dump_stack() here will give a stack backtrace */
+  //*/
+  /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
   printk(KERN_INFO "RSI addr = %lx \n",regs->si);
 
   if((regs->si)==0) return 0;
 
   my_task = (struct task_struct *)regs->si;
-  printk(KERN_INFO "KM PID: %d\n",my_task->pid);
+  printk(KERN_INFO "KM PID: %d\n trace? :: %pB",my_task->pid, my_task->thread->sp);
 
   hash_inc((int)my_task->pid);
 
@@ -93,6 +94,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   unsigned long flags)
 {
+  ///*
 #ifdef CONFIG_X86
   pr_info("<%s> p->addr = 0x%p, flags = 0x%lx\n",
     p->symbol_name, p->addr, regs->flags);
@@ -101,6 +103,8 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
     p->symbol_name, p->addr, (long)regs->pstate);
 #endif
+  //*/
+  //Proj3 p1:
   //counter++;
 }
 
