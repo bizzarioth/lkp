@@ -104,8 +104,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,64,0);
-    printk(KERN_INFO "%*c%pS\n ",3,' ',(void *)stack_storer[0]);
-    //stack_trace_print(stack_storer,len_trace,5);
+    printk(KERN_INFO "CHECLL:HERE");// %*c%pS\n ",3,' ',(void *)stack_storer[0]);
+    stack_trace_print(stack_storer,len_trace,5);
     //printk(KERN_INFO "\n TRACE: %s",pbuff);
 
   }
