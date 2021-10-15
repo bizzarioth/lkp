@@ -11,6 +11,10 @@
 #include <linux/kprobes.h>
 #include <asm/uaccess.h>
 
+#include <linux/export.h>
+#include <linux/kallsyms.h>
+#include <linux/stacktrace.h>
+
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
 #define mBUFSIZE  2000
@@ -69,6 +73,9 @@ int hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
+  unsigned long *stack_storer;
+  char pbuff[2000];
+  unsigned int n_entries;
   ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -85,10 +92,22 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   /*
   Use stack_trace_save function for a kernel task
   Use save_stack_trace_user function for a user task
+  -----> use instead stack_trace_save_user
   mm==NULL >means> kernel task
   */
   printk(KERN_INFO "KM PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
+  //size = 10 for now
+  if(my_task->mm){
+    //user thread
+    //stack_trace_save_user(stack_storer,10);
+    printk(KERN_INFO "USER PID\n");
+  }else{
+    //kernel thread
+    n_entries = stack_trace_save(stack_storer,15,0);
+    stack_trace_print(stack_storer,n_entries,5)
+    //printk(KERN_INFO "\n TRACE: %s",pbuff);
 
+  }
   hash_inc((int)my_task->pid);
 
   counter = my_task->pid;
