@@ -20,6 +20,7 @@
 #define mBUFSIZE  2000
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
+static char stack_user_symbol[MAX_SYMBOL_LEN] = "stack_trace_save_user";
 
 static struct task_struct * my_task; 
 static int counter=0;
@@ -76,6 +77,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   unsigned long stack_storer[64];
   char pbuff[2000];
   int len_trace;
+  unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
   ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -99,9 +101,11 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   //size = 10 for now
   if(my_task->mm){
     //user thread
-    len_trace=stack_trace_save_user(stack_storer,64);
+    //len_trace=stack_trace_save_user(stack_storer,64);
     printk(KERN_INFO "USER PID\n");
-    stack_trace_print(stack_storer,len_trace,5);
+    //stack_trace_print(stack_storer,len_trace,5);
+    strncpy(pbuff, (char *)symbol_add, 255); 
+    printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,64,0);
