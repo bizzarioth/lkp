@@ -14,10 +14,13 @@
 #include <linux/export.h>
 #include <linux/kallsyms.h>
 #include <linux/stacktrace.h>
+#include <linux/string.h>
+#include <linux/jhash.h>
 
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
 #define mBUFSIZE  2000
+#define mTrace 64
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
 static char stack_user_symbol[MAX_SYMBOL_LEN] = "stack_trace_save_user";
@@ -74,10 +77,11 @@ int hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  unsigned long stack_storer[64];
-  char pbuff[2000];
+  unsigned long stack_storer[mTrace];
+  char pbuff[256];
   int len_trace;
   unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
+  u32 hashKey;
   ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -101,18 +105,19 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   //size = 10 for now
   if(my_task->mm){
     //user thread
-    //len_trace=stack_trace_save_user(stack_storer,64);
+    //len_trace=stack_trace_save_user(stack_storer,mTrace);
     printk(KERN_INFO "USER PID\n");
     //stack_trace_print(stack_storer,len_trace,5);
     strncpy(pbuff, (char *)symbol_add, 255); 
     printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
   }else{
     //kernel thread
-    len_trace = stack_trace_save(stack_storer,64,0);
+    len_trace = stack_trace_save(stack_storer,mTrace,0);
     printk(KERN_INFO "CHECLL:HERE");// %*c%pS\n ",3,' ',(void *)stack_storer[0]);
     stack_trace_print(stack_storer,len_trace,5);
     //printk(KERN_INFO "\n TRACE: %s",pbuff);
-
+    hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
+    printk(KERN_INFO "jhash:: %d", hashKey);
   }
   hash_inc((int)my_task->pid);
 
