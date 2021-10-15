@@ -82,7 +82,12 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   if((regs->si)==0) return 0;
 
   my_task = (struct task_struct *)regs->si;
-  printk(KERN_INFO "KM PID: %d\n trace? :: %pB",my_task->pid, my_task->thread->sp);
+  /*
+  Use stack_trace_save function for a kernel task
+  Use save_stack_trace_user function for a user task
+  mm==NULL >means> kernel task
+  */
+  printk(KERN_INFO "KM PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
 
   hash_inc((int)my_task->pid);
 
