@@ -99,8 +99,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   //size = 10 for now
   if(my_task->mm){
     //user thread
-    //stack_trace_save_user(stack_storer,10);
+    len_trace=stack_trace_save_user(stack_storer,64);
     printk(KERN_INFO "USER PID\n");
+    stack_trace_print(stack_storer,len_trace,5);
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,64,0);
