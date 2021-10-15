@@ -73,9 +73,9 @@ int hash_inc(int pid){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  unsigned long *stack_storer;
+  unsigned long stack_storer[64];
   char pbuff[2000];
-  unsigned int n_entries;
+  int len_trace;
   ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -103,10 +103,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "USER PID\n");
   }else{
     //kernel thread
-    n_entries = stack_trace_save(stack_storer,15,0);
+    len_trace = stack_trace_save(stack_storer,64,0);
     printk(KERN_INFO "%*c%pS\n ",3,' ',(void *)stack_storer[0]);
-    printk(KERN_INFO "%*c%pS\n ",3,' ',(void *)stack_storer[1]);
-    //stack_trace_print(stack_storer,n_entries,5);
+    //stack_trace_print(stack_storer,len_trace,5);
     //printk(KERN_INFO "\n TRACE: %s",pbuff);
 
   }
