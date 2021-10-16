@@ -115,8 +115,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   */
   /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
-  printk(KERN_INFO "RSI addr = %lx \n",regs->si);
-
+  //printk(KERN_INFO "RSI addr = %lx \n",regs->si);
   if((regs->si)==0) return 0;
 
   my_task = (struct task_struct *)regs->si;
@@ -132,22 +131,20 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     //len_trace=stack_trace_save_user(stack_storer,mTrace);
     //Get save_user ADD
     pointer_save_user = (func_user*)pointer_lookup_name(search_lookup);
-    
+
     printk(KERN_INFO "USER PID\n");
     len_trace = pointer_save_user(stack_storer, mTrace);
-    printk(KERN_INFO "USER PID Stack Trace\n");
+    printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash:: %d", hashKey);
-    /*
-      strncpy(pbuff, (char *)symbol_add, 255); 
-      printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
-    */
+    printk(KERN_INFO "USER jhash:: %d\n", hashKey);
+    //strncpy(pbuff, (char *)symbol_add, 255);
+    //printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
-    //printk(KERN_INFO "CHECLL:HERE");
-    //stack_trace_print(stack_storer,len_trace,5);
+    printk(KERN_INFO "CHECLL:KERN STACK Trace ");
+    stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
     printk(KERN_INFO "jhash:: %d", hashKey);
   }
