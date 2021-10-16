@@ -231,12 +231,12 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   if(*ppos > 0 || count < mBUFSIZE)
       return 0;
   len += sprintf(buf,"Hash Table: \n");
-  len += sprintf(buf," PID	|	Times Called | JHash  | Same?\n");
+  len += sprintf(buf," PID	|	Times Called	|	JHash	|	Same?\n");
   
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
     
-    len += sprintf(buf + len," %d	|	%d | %d  | %d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
+    len += sprintf(buf + len," %d	|	%d	|	%d	|	%d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
 
   }
 
