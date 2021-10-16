@@ -254,6 +254,8 @@ static int kprobe_init(void){
     return ret_kallsym;
   }
   pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
+  unregister_kprobe(&k_kallsym);
+  pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
 
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
