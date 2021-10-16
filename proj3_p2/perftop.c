@@ -23,7 +23,7 @@
 #define mTrace 64
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
-static char kallsym_Symbol[MAX_SYMBOL_LEN] = "kallsyms";
+static char kallsym_Symbol[MAX_SYMBOL_LEN] = "kallsyms_lookup_name";
 
 static struct task_struct * my_task; 
 static int counter=0;
