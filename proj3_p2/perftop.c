@@ -134,13 +134,13 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   counter = my_task->pid;
   return 0;
 }
-static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
+static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
 {
   //unsigned long stack_storer[mTrace];
   //char pbuff[256];
   //int len_trace;
   //u32 hashKey;
-  //unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
+  //-----KALLSYMS PROBE
   ///*
   #ifdef CONFIG_X86
     pr_info("kallsyms <%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
