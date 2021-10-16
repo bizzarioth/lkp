@@ -20,16 +20,33 @@
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
 #define mBUFSIZE  2000
+//size of long[] for stack trace
 #define mTrace 64
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
-//static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
+//kprobe at kallsyms
 static char kallsym_Symbol[MAX_SYMBOL_LEN] = "kallsyms_lookup_name";
-
+static char search_lookup[MAX_SYMBOL_LEN] = "stack_trace_save_user";
+/*
+>get ADD of kallsyms_lookup_name
+>>Create function pointer
+>>>pass stack_trace_save_user and get ADD of that
+>>>>Create function pointer and use for stact track
+*/
 static struct task_struct * my_task; 
 static int counter=0;
 
 // Initialize Hashtable
 static DEFINE_HASHTABLE(myhashtable,MAX_b);
+/*Prototype of kallsyms_lookup_name
+unsigned long kallsyms_lookup_name(const char *name)
+Prototype of stack_trace_save_user
+unsigned int stack_trace_save_user(unsigned long *store, unsigned int size);
+*/
+typedef unsigned long func_lookup(const char *name);
+typedef unsigned int func_user(unsigned long *store, unsigned int size);
+
+static func_lookup* pointer_lookup_name = NULL;
+static func_user* pointer_save_user = NULL;
 
 int or = 4;
 int bkt = 0;
@@ -254,6 +271,13 @@ static int kprobe_init(void){
     return ret_kallsym;
   }
   pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
+  /* Get pointers to lookup and save_user*/
+  pointer_lookup_name = (func_lookup*)k_kallsym.addr;
+  printk(KERN_INFO "CALL lookup pointer\n");
+  printk(KERN_INFO "ADD returned for stack_trace_save_user : %p \n", pointer_lookup_name(search_lookup));
+  //(*pointer_save_user)(unsigned long *store, unsigned int size)=NULL;
+
+
   unregister_kprobe(&k_kallsym);
   pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
 
