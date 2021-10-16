@@ -53,9 +53,9 @@ int bkt = 0;
 
 struct hEntry {
   int key;
+  int count_shed;
   int val;
-  u32 trace_hash;
-  int chk;
+  unsigned int trace_hash;
   struct hlist_node hList;
 };
 /* For each probe you need to allocate a kprobe structure */
@@ -70,7 +70,11 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-int hash_inc(int pid, u32 trace_hash){
+int hash_inc_jhash(u32 trace_hash, int pid){
+  /*
+  Function to Insert/Increment Hash table Node with key = JHash(Stack_Trace)
+    Debug: Takes jHash of trace and stores it
+  */
   struct hEntry *tnode;
   struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
   if(!hnode && sizeof(*hnode))
@@ -78,23 +82,49 @@ int hash_inc(int pid, u32 trace_hash){
     return -ENOMEM;
   }
   //search pid(key)
-
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
-    if(pid==tnode->key){
+    //if(pid==tnode->key){
+    if(trace_hash==tnode->key){
       //found : increment
-      tnode->val++;
-      //trace check
-      tnode->chk = (tnode->trace_hash == trace_hash);
+      tnode->count_shed++;
+      hnode->val2= pid;
       return 0;
       }
   }
 
-  //create if doesnot exist
+  //create Node if it doesnot exist
+  hnode->key = trace_hash;
+  hnode->count_shed = 1;
+  hnode->val1= pid;
+  hash_add(myhashtable,&hnode->hList, hnode->key);
+  return 0;
+}
+int hash_inc_pid(int pid, u32 trace_hash){
+  /*
+  Function to Insert/Increment Hash table Node with key = pid
+    Debug: Takes jHash of trace and stores it
+  */
+  struct hEntry *tnode;
+  struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
+  if(!hnode && sizeof(*hnode))
+  {
+    return -ENOMEM;
+  }
+  //search pid(key)
+  hash_for_each(myhashtable, bkt, tnode, hList)
+  {
+    if(pid==tnode->key){
+      //found : increment
+      tnode->count_shed++;
+      return 0;
+      }
+  }
+
+  //create Node if it doesnot exist
   hnode->key = pid;
-  hnode->val = 1;
+  hnode->count_shed = 1;
   hnode->trace_hash= trace_hash;
-  hnode->chk = 1;
   hash_add(myhashtable,&hnode->hList, hnode->key);
   return 0;
 }
@@ -148,7 +178,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
     printk(KERN_INFO "jhash:: %x", hashKey);
   }
-  hash_inc((int)my_task->pid, hashKey);
+  //hash_inc_pid((int)my_task->pid, u32 hashKey);
+  hash_inc_jhash(u32 hashKey, (int)my_task->pid);
 
   counter = my_task->pid;
   return 0;
@@ -194,12 +225,14 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   if(*ppos > 0 || count < mBUFSIZE)
       return 0;
   len += sprintf(buf,"Hash Table: \n");
-  len += sprintf(buf," PID	|	Times Called	|	JHash	|	Same?\n");
+  //len += sprintf(buf," PID	|	Times Called	|	JHash	?\n");
+  len += sprintf(buf," jHash	|	Times Called	|	PID1 | PID2\n");
   
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
     
-    len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
+    //len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
+    len += sprintf(buf + len,"	%x	|	%d	|	%d	|	%d\n",hnode->key,hnode->count_shed, hnode->val1, hnode->val2);
 
   }
 
