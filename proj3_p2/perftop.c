@@ -54,7 +54,7 @@ int bkt = 0;
 struct hEntry {
   int key;
   int val;
-  int trace_hash;
+  u32 trace_hash;
   int chk;
   struct hlist_node hList;
 };
@@ -70,7 +70,7 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-int hash_inc(int pid, int trace_hash){
+int hash_inc(int pid, u32 trace_hash){
   struct hEntry *tnode;
   struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
   if(!hnode && sizeof(*hnode))
@@ -137,7 +137,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash:: %d\n", hashKey);
+    printk(KERN_INFO "USER jhash:: %x\n", hashKey);
     //strncpy(pbuff, (char *)symbol_add, 255);
     //printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
   }else{
@@ -146,57 +146,17 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "CHECLL:KERN STACK Trace ");
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "jhash:: %d", hashKey);
+    printk(KERN_INFO "jhash:: %x", hashKey);
   }
-  hash_inc((int)my_task->pid, (int)hashKey);
+  hash_inc((int)my_task->pid, hashKey);
 
   counter = my_task->pid;
   return 0;
 }
 static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
 {
-  /*
-    unsigned long stack_storer[mTrace];
-    char pbuff[256];
-    int len_trace;
-    u32 hashKey;
-    //-----KALLSYMS PROBE
-    
-    #ifdef CONFIG_X86
-      pr_info("kallsyms <%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
-        p->symbol_name, p->addr, regs->ip, regs->flags);
-    #endif
-    // A dump_stack() here will give a stack backtrace
-    //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
-    printk(KERN_INFO "KALLSYMS RSI = %lx \n",regs->si);
-  */
   printk(KERN_INFO "KALLSYMS PREHANDLER");
-  if((regs->si)==0) return 0;
-
-  /*
-    my_task = (struct task_struct *)regs->si;
-    Use stack_trace_save function for a kernel task
-    Use save_stack_trace_user function for a user task
-    -----> use instead stack_trace_save_user
-    mm==NULL >means> kernel task
-    */
-    //printk(KERN_INFO "KM kallsyms PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
-    /*
-    if(my_task->mm){
-      //user thread
-      printk(KERN_INFO "KALLSYUSER PID\n");
-      }else{
-      //kernel thread
-      len_trace = stack_trace_save(stack_storer,mTrace,0);
-      printk(KERN_INFO "CHECLL:HERE");// %*c%pS\n ",3,' ',(void *)stack_storer[0]);
-      stack_trace_print(stack_storer,len_trace,5);
-      //printk(KERN_INFO "\n TRACE: %s",pbuff);
-      hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-      printk(KERN_INFO "jhash:: %d", hashKey);
-    }
-    //hash_inc((int)my_task->pid, (int)hashKey);
-  */
- return 0;
+  return 0;
 }
 
 /* kprobe post_handler: called after the probed instruction is executed */
@@ -239,7 +199,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
     
-    len += sprintf(buf + len," %d	|	%d	|	%d	|	%d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
+    len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
 
   }
 
