@@ -130,6 +130,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   if(my_task->mm){
     //user thread
     //len_trace=stack_trace_save_user(stack_storer,mTrace);
+    //Get save_user ADD
+    pointer_save_user = (func_user*)pointer_lookup_name(search_lookup);
+    
     printk(KERN_INFO "USER PID\n");
     len_trace = pointer_save_user(stack_storer, mTrace);
     printk(KERN_INFO "USER PID Stack Trace\n");
@@ -265,8 +268,8 @@ static int kprobe_init(void){
   kproc_open.pre_handler = handler_pre;
   kproc_open.post_handler = handler_post;
 
-  k_kallsym.pre_handler = handler_pre_kallsym;
-  k_kallsym.post_handler = handler_post;
+  //k_kallsym.pre_handler = handler_pre_kallsym;
+  //k_kallsym.post_handler = handler_post;
   
   ret_kallsym = register_kprobe(&k_kallsym);
   if (ret_kallsym < 0) {
@@ -277,9 +280,6 @@ static int kprobe_init(void){
   /* Get pointers to lookup and save_user*/
   pointer_lookup_name = (func_lookup*)k_kallsym.addr;
   printk(KERN_INFO "CALL lookup pointer\n");
-
-  unregister_kprobe(&k_kallsym);
-  pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
   printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
   
   ret = register_kprobe(&kproc_open);
@@ -306,6 +306,10 @@ static void __exit proj_exit(void) {
 
   unregister_kprobe(&kproc_open);
   pr_info("kprobe at %p unregistered\n", kproc_open.addr);
+
+  unregister_kprobe(&k_kallsym);
+  pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
+  
 
   return;
 }
