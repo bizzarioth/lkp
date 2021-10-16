@@ -274,13 +274,11 @@ static int kprobe_init(void){
   /* Get pointers to lookup and save_user*/
   pointer_lookup_name = (func_lookup*)k_kallsym.addr;
   printk(KERN_INFO "CALL lookup pointer\n");
-  printk(KERN_INFO "ADD returned for stack_trace_save_user : %p \n", pointer_lookup_name(search_lookup));
-  //(*pointer_save_user)(unsigned long *store, unsigned int size)=NULL;
-
 
   unregister_kprobe(&k_kallsym);
   pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
-
+  printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
+  
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
     pr_err("register_kprobe failed, returned %d\n", ret);
