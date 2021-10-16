@@ -182,7 +182,6 @@ static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
 static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   unsigned long flags)
 {
-    printk(KERN_INFO "post_handler\n");
   /*
     #ifdef CONFIG_X86
       pr_info("<%s> p->addr = 0x%p, flags = 0x%lx\n",
@@ -248,6 +247,14 @@ static int kprobe_init(void){
 
   k_kallsym.pre_handler = handler_pre_kallsym;
   k_kallsym.post_handler = handler_post;
+  
+  ret_kallsym = register_kprobe(&k_kallsym);
+  if (ret_kallsym < 0) {
+    pr_err("register k_kallsym failed, returned %d\n", ret_kallsym);
+    return ret_kallsym;
+  }
+  pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
+
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
     pr_err("register_kprobe failed, returned %d\n", ret);
@@ -255,12 +262,6 @@ static int kprobe_init(void){
   }
   pr_info("Planted kprobe at %p\n", kproc_open.addr);
 
-  ret_kallsym = register_kprobe(&k_kallsym);
-  if (ret_kallsym < 0) {
-    pr_err("register k_kallsym failed, returned %d\n", ret_kallsym);
-    return ret_kallsym;
-  }
-  pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
   return 0;
 }
 
