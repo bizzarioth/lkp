@@ -54,8 +54,8 @@ int bkt = 0;
 struct hEntry {
   u32 trace_hash;
   int count_shed;
-  int val1;
-  int val2;
+  int val;
+  //int val2;
   int key;
   struct hlist_node hList;
 };
@@ -88,9 +88,8 @@ int hash_inc_jhash(u32 trace_hash, int pid){
     //if(pid==tnode->key){
     if(trace_hash == tnode->key){
       //found : increment
-      printk(KERN_INFO "in: %x chk:")
       tnode->count_shed++;
-      hnode->val2 = pid;
+      //hnode->val2 = pid;
       return 0;
       }
   }
@@ -99,7 +98,7 @@ int hash_inc_jhash(u32 trace_hash, int pid){
   hnode->key = 0+trace_hash;
   hnode->count_shed = 1;
   hnode->val = pid;
-  hnode->val2 = pid;
+  //hnode->val2 = pid;
   hash_add(myhashtable,&hnode->hList, hnode->key);
   return 0;
 }
@@ -228,13 +227,13 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
       return 0;
   len += sprintf(buf,"Hash Table: \n");
   //len += sprintf(buf," PID	|	Times Called	|	JHash	?\n");
-  len += sprintf(buf," jHash	|	Times Called	|	PID1 | PID2\n");
+  len += sprintf(buf," jHash	|	Times Called	|	PID1\n");
   
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
     
     //len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
-    len += sprintf(buf + len,"	%u	|	%d	|	%d	|	%u\n",hnode->key ,hnode->count_shed, hnode->val, hnode->val2);
+    len += sprintf(buf + len,"	%u	|	%d	|	%d\n",hnode->key ,hnode->count_shed, hnode->val);//, hnode->val2);
 
   }
 
