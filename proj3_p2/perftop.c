@@ -52,10 +52,11 @@ int or = 4;
 int bkt = 0;
 
 struct hEntry {
-  int key;
+  u32 trace_hash;
   int count_shed;
-  int val;
-  unsigned int trace_hash;
+  int val1;
+  int val2;
+  int key;
   struct hlist_node hList;
 };
 /* For each probe you need to allocate a kprobe structure */
@@ -85,18 +86,20 @@ int hash_inc_jhash(u32 trace_hash, int pid){
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
     //if(pid==tnode->key){
-    if(trace_hash==tnode->key){
+    if(trace_hash == tnode->key){
       //found : increment
+      printk(KERN_INFO "in: %x chk:")
       tnode->count_shed++;
-      hnode->val2= pid;
+      hnode->val2 = pid;
       return 0;
       }
   }
 
   //create Node if it doesnot exist
-  hnode->key = trace_hash;
+  hnode->key = 0+trace_hash;
   hnode->count_shed = 1;
-  hnode->val1= pid;
+  hnode->val = pid;
+  hnode->val2 = pid;
   hash_add(myhashtable,&hnode->hList, hnode->key);
   return 0;
 }
@@ -120,7 +123,6 @@ int hash_inc_pid(int pid, u32 trace_hash){
       return 0;
       }
   }
-
   //create Node if it doesnot exist
   hnode->key = pid;
   hnode->count_shed = 1;
@@ -167,7 +169,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash:: %x\n", hashKey);
+    printk(KERN_INFO "USER jhash:: %x and %d\n", hashKey,hashKey);
     //strncpy(pbuff, (char *)symbol_add, 255);
     //printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
   }else{
@@ -176,10 +178,10 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "CHECLL:KERN STACK Trace ");
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "jhash:: %x", hashKey);
+    printk(KERN_INFO "jhash:: %x and %d", hashKey, hashKey);
   }
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
-  hash_inc_jhash(u32 hashKey, (int)my_task->pid);
+  hash_inc_jhash(hashKey, (int)my_task->pid);
 
   counter = my_task->pid;
   return 0;
@@ -232,7 +234,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   {
     
     //len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
-    len += sprintf(buf + len,"	%x	|	%d	|	%d	|	%d\n",hnode->key,hnode->count_shed, hnode->val1, hnode->val2);
+    len += sprintf(buf + len,"	%u	|	%d	|	%d	|	%u\n",hnode->key ,hnode->count_shed, hnode->val, hnode->val2);
 
   }
 
