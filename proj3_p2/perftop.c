@@ -90,12 +90,12 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   int len_trace;
   u32 hashKey;
   //unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
-  ///*
+  /*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
   #endif
-  //*/
+  */
   /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
   printk(KERN_INFO "RSI addr = %lx \n",regs->si);
@@ -109,7 +109,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   -----> use instead stack_trace_save_user
   mm==NULL >means> kernel task
   */
-  printk(KERN_INFO "KM PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
+  printk(KERN_INFO "KM PID: %d task_struct->mm = %pB",my_task->pid, my_task->mm);
   //size = 10 for now
   if(my_task->mm){
     //user thread
@@ -123,9 +123,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
-    printk(KERN_INFO "CHECLL:HERE");// %*c%pS\n ",3,' ',(void *)stack_storer[0]);
-    stack_trace_print(stack_storer,len_trace,5);
-    //printk(KERN_INFO "\n TRACE: %s",pbuff);
+    //printk(KERN_INFO "CHECLL:HERE");
+    //stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
     printk(KERN_INFO "jhash:: %d", hashKey);
   }
@@ -141,26 +140,26 @@ static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
   //int len_trace;
   //u32 hashKey;
   //-----KALLSYMS PROBE
-  ///*
+  /*
   #ifdef CONFIG_X86
     pr_info("kallsyms <%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
   #endif
-  //*/
+  */
   /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
-  printk(KERN_INFO "kallsyms RSI addr = %lx \n",regs->si);
+  printk(KERN_INFO "KALLSYMS RSI = %lx \n",regs->si);
 
   if((regs->si)==0) return 0;
 
-  my_task = (struct task_struct *)regs->si;
+  //my_task = (struct task_struct *)regs->si;
   /*
   Use stack_trace_save function for a kernel task
   Use save_stack_trace_user function for a user task
   -----> use instead stack_trace_save_user
   mm==NULL >means> kernel task
   */
-  printk(KERN_INFO "KM kallsyms PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
+  //printk(KERN_INFO "KM kallsyms PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
   /*
   if(my_task->mm){
     //user thread
@@ -183,18 +182,17 @@ static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
 static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   unsigned long flags)
 {
-  ///*
-#ifdef CONFIG_X86
-  pr_info("<%s> p->addr = 0x%p, flags = 0x%lx\n",
-    p->symbol_name, p->addr, regs->flags);
-#endif
-#ifdef CONFIG_ARM64
-  pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
-    p->symbol_name, p->addr, (long)regs->pstate);
-#endif
-  //*/
-  //Proj3 p1:
-  //counter++;
+    printk(KERN_INFO "post_handler\n");
+  /*
+    #ifdef CONFIG_X86
+      pr_info("<%s> p->addr = 0x%p, flags = 0x%lx\n",
+        p->symbol_name, p->addr, regs->flags);
+    #endif
+    #ifdef CONFIG_ARM64
+      pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
+        p->symbol_name, p->addr, (long)regs->pstate);
+    #endif
+  */
 }
 
 
@@ -244,12 +242,12 @@ static const struct proc_ops myops =
 };
 
 static int kprobe_init(void){
-  int ret;
+  int ret,ret_kallsym;
   kproc_open.pre_handler = handler_pre;
   kproc_open.post_handler = handler_post;
 
   k_kallsym.pre_handler = handler_pre_kallsym;
-
+  k_kallsym.post_handler = handler_post;
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
     pr_err("register_kprobe failed, returned %d\n", ret);
