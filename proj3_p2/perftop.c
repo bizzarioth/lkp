@@ -23,7 +23,7 @@
 #define mTrace 64
 static char symbol[MAX_SYMBOL_LEN] = "pick_next_task_fair";
 //static char symbol[MAX_SYMBOL_LEN] = "proc_opener";
-static char stack_user_symbol[MAX_SYMBOL_LEN] = "stack_trace_save_user";
+static char kallsym_Symbol[MAX_SYMBOL_LEN] = "kallsyms";
 
 static struct task_struct * my_task; 
 static int counter=0;
@@ -35,21 +35,25 @@ int or = 4;
 int bkt = 0;
 
 struct hEntry {
-  int val;
   int key;
+  int val;
+  int trace_hash;
+  int chk;
   struct hlist_node hList;
 };
 /* For each probe you need to allocate a kprobe structure */
 static struct kprobe kproc_open = {
   .symbol_name  = symbol,
 };
-
+static struct kprobe k_kallsym = {
+  .symbol_name  = kallsym_Symbol,
+};
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-int hash_inc(int pid){
+int hash_inc(int pid, int trace_hash){
   struct hEntry *tnode;
   struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
   if(!hnode && sizeof(*hnode))
@@ -63,6 +67,8 @@ int hash_inc(int pid){
     if(pid==tnode->key){
       //found : increment
       tnode->val++;
+      //trace check
+      tnode->chk = (tnode->trace_hash == trace_hash);
       return 0;
       }
   }
@@ -70,6 +76,8 @@ int hash_inc(int pid){
   //create if doesnot exist
   hnode->key = pid;
   hnode->val = 1;
+  hnode->trace_hash= trace_hash;
+  hnode->chk = 1;
   hash_add(myhashtable,&hnode->hList, hnode->key);
   return 0;
 }
@@ -80,8 +88,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   unsigned long stack_storer[mTrace];
   char pbuff[256];
   int len_trace;
-  unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
   u32 hashKey;
+  //unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
   ///*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -107,9 +115,11 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     //user thread
     //len_trace=stack_trace_save_user(stack_storer,mTrace);
     printk(KERN_INFO "USER PID\n");
-    //stack_trace_print(stack_storer,len_trace,5);
+    /*
+    stack_trace_print(stack_storer,len_trace,5);
     strncpy(pbuff, (char *)symbol_add, 255); 
     printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
+    */
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
@@ -119,10 +129,54 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
     printk(KERN_INFO "jhash:: %d", hashKey);
   }
-  hash_inc((int)my_task->pid);
+  hash_inc((int)my_task->pid, (int)hashKey);
 
   counter = my_task->pid;
   return 0;
+}
+static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
+{
+  //unsigned long stack_storer[mTrace];
+  //char pbuff[256];
+  //int len_trace;
+  //u32 hashKey;
+  //unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
+  ///*
+  #ifdef CONFIG_X86
+    pr_info("kallsyms <%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
+      p->symbol_name, p->addr, regs->ip, regs->flags);
+  #endif
+  //*/
+  /* A dump_stack() here will give a stack backtrace */
+  //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
+  printk(KERN_INFO "kallsyms RSI addr = %lx \n",regs->si);
+
+  if((regs->si)==0) return 0;
+
+  my_task = (struct task_struct *)regs->si;
+  /*
+  Use stack_trace_save function for a kernel task
+  Use save_stack_trace_user function for a user task
+  -----> use instead stack_trace_save_user
+  mm==NULL >means> kernel task
+  */
+  printk(KERN_INFO "KM kallsyms PID: %d\n task_struct->mm = %pB",my_task->pid, my_task->mm);
+  /*
+  if(my_task->mm){
+    //user thread
+    printk(KERN_INFO "KALLSYUSER PID\n");
+    }else{
+    //kernel thread
+    len_trace = stack_trace_save(stack_storer,mTrace,0);
+    printk(KERN_INFO "CHECLL:HERE");// %*c%pS\n ",3,' ',(void *)stack_storer[0]);
+    stack_trace_print(stack_storer,len_trace,5);
+    //printk(KERN_INFO "\n TRACE: %s",pbuff);
+    hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
+    printk(KERN_INFO "jhash:: %d", hashKey);
+  }
+  //hash_inc((int)my_task->pid, (int)hashKey);
+  */
+ return 0;
 }
 
 /* kprobe post_handler: called after the probed instruction is executed */
@@ -163,12 +217,12 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   if(*ppos > 0 || count < mBUFSIZE)
       return 0;
   len += sprintf(buf,"Hash Table: \n");
-  len += sprintf(buf," PID	|	Times Called\n");
+  len += sprintf(buf," PID	|	Times Called | JHash  | Same?\n");
   
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
     
-    len += sprintf(buf + len," %d	|	%d\n ",hnode->key,hnode->val);
+    len += sprintf(buf + len," %d	|	%d | %d  | %d\n ",hnode->key,hnode->val, hnode->trace_hash, hnode->chk);
 
   }
 
@@ -194,12 +248,21 @@ static int kprobe_init(void){
   kproc_open.pre_handler = handler_pre;
   kproc_open.post_handler = handler_post;
 
+  k_kallsym.pre_handler = handler_pre_kallsym;
+
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
     pr_err("register_kprobe failed, returned %d\n", ret);
     return ret;
   }
   pr_info("Planted kprobe at %p\n", kproc_open.addr);
+
+  ret_kallsym = register_kprobe(&k_kallsym);
+  if (ret_kallsym < 0) {
+    pr_err("register k_kallsym failed, returned %d\n", ret_kallsym);
+    return ret_kallsym;
+  }
+  pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
   return 0;
 }
 
