@@ -71,7 +71,7 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-int hash_inc_jhash(u32 trace_hash, int pid){
+static int hash_inc_jhash(u32 trace_hash, int pid){
   /*
   Function to Insert/Increment Hash table Node with key = JHash(Stack_Trace)
     Debug: Takes jHash of trace and stores it
@@ -99,8 +99,17 @@ int hash_inc_jhash(u32 trace_hash, int pid){
   hnode->count_shed = 1;
   hnode->val = pid;
   //hnode->val2 = pid;
-  hash_add(myhashtable,&hnode->hList, hnode->key);
+  hash_add(myhashtable,&hnode->hList, trace_hash);
   return 0;
+}
+static void hash_cleanup(void){
+	struct hEntry *tnode;
+  hash_for_each(myhashtable, bkt, tnode, hList)
+  {
+    hash_del(&tnode->hList);
+		kfree(tnode);
+  }
+  
 }
 int hash_inc_pid(int pid, u32 trace_hash){
   /*
@@ -129,6 +138,7 @@ int hash_inc_pid(int pid, u32 trace_hash){
   hash_add(myhashtable,&hnode->hList, hnode->key);
   return 0;
 }
+
 
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
@@ -301,6 +311,7 @@ static void __exit proj_exit(void) {
   unregister_kprobe(&k_kallsym);
   pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
   
+  hash_cleanup();
 
   return;
 }
