@@ -84,7 +84,8 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
     return -ENOMEM;
   }
   //search pid(key)
-  hash_for_each_possible(myhashtable, bkt, tnode, hList)
+  hash_for_each(myhashtable, bkt, tnode, hList)
+  hash_for_each_possible(myhashtable, tnode, hList, trace_hash)
   {
     //if(pid==tnode->key){
     if(trace_hash == tnode->trace_hash){
