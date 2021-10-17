@@ -263,15 +263,15 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
+    //printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
 
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
     printk(KERN_INFO "CHECLL:KERN STACK Trace\n");
-    stack_trace_print(stack_storer,len_trace,5);
+    //stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "jhash::0x%x\n", hashKey);
+    //printk(KERN_INFO "jhash::0x%x\n", hashKey);
   }
   spin_lock(&mySpin_lock);
   time_fin = rdtsc();
@@ -404,8 +404,8 @@ static int kprobe_init(void){
   pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
   /* Get pointers to lookup and save_user*/
   pointer_lookup_name = (func_lookup*)k_kallsym.addr;
-  printk(KERN_INFO "CALL lookup pointer\n");
-  printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
+  //printk(KERN_INFO "CALL lookup pointer\n");
+  //printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
   
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
