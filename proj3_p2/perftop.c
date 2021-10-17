@@ -97,7 +97,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
   //create Node if it doesnot exist
   hnode->trace_hash = trace_hash;
   hnode->count_shed = 1;
-  hnode->val = pid;
+  hnode->pid = pid;
   hnode->len_trace = len_trace;
   
   i=0;
@@ -123,17 +123,17 @@ int hash_inc_pid(int pid, u32 trace_hash){
   //search pid(key)
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
-    if(pid==tnode->key){
+    if(pid==tnode->pid){
       //found : increment
       tnode->count_shed++;
       return 0;
       }
   }
   //create Node if it doesnot exist
-  hnode->key = pid;
+  hnode->pid = pid;
   hnode->count_shed = 1;
   hnode->trace_hash= trace_hash;
-  hash_add(myhashtable,&hnode->hList, hnode->key);
+  hash_add(myhashtable,&hnode->hList, hnode->pid);
   return 0;
 }
 
@@ -212,19 +212,14 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   */
 }
 
-
-static int proc_opener(struct inode *in, struct file *f){
-  return single_open(f, proc_show, NULL);
-}
 static int proc_show(struct seq_file *m, void *v){
 
   int i;
   char buf[mBUFSIZE];
   struct hEntry *hnode;
   
-  seq_printf(m, "HASHTABLE: Stack Counter and Trace")
-  hash_for_each(myhashtable, bkt, hnode, hList)
-  {
+  seq_printf(m, "HASHTABLE: Stack Counter and Trace");
+  hash_for_each(myhashtable, bkt, hnode, hList){
   	seq_printf(m ,"------------Stack Trace------------\n\n");
 		i = 0;
 		while(i < hnode->len_trace)
@@ -232,13 +227,15 @@ static int proc_show(struct seq_file *m, void *v){
 			seq_printf(m ,"%pS\n", (void *)hnode->stack_dump[i]);
 			i++;
 		}
-		seq_printf(m ,"Count\t%d|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->val,hnode->trace_hash);
+		seq_printf(m ,"Count\t%d|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->pid,hnode->trace_hash);
 		seq_printf(m ,"-----------------------------------\n\n");
 	}
-
   return 0;
 }
 
+static int proc_opener(struct inode *in, struct file *f){
+  return single_open(f, proc_show, NULL);
+}
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 
   int len=0;
@@ -256,7 +253,7 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   {
     
     //len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
-    len += sprintf(buf + len,"	%u	|	%d	|	%d\n",hnode->key ,hnode->count_shed, hnode->val);//, hnode->val2);
+    len += sprintf(buf + len,"	%d	|	%d	|	%u\n",hnode->pid ,hnode->count_shed, hnode->trace_hash);
 
   }
 
