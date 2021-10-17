@@ -277,7 +277,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
-  rb_inc_timer(len_trace, stack_storer);
+  rb_inc_timer(hashKey,len_trace, stack_storer);
   spin_unlock(&mySpin_lock);
 
   counter = my_task->pid;
