@@ -163,12 +163,10 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
   //printk(KERN_INFO "RSI addr = %lx \n",regs->si);
-  spin_lock(&mySpin_lock);
+
   if((regs->si)==0) return 0;
 
   my_task = (struct task_struct *)regs->si;
-  time_fin = rdtsc();
-  time_fin-=time_start;
   /*
   Use stack_trace_save function for a kernel task
   Use save_stack_trace_user function for a user task
@@ -190,18 +188,19 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash:: %x and %d\n", hashKey,hashKey);
-    //strncpy(pbuff, (char *)symbol_add, 255);
-    //printk(KERN_INFO "[%s] %s (0x%lx): %s\n", __this_module.name, stack_user_symbol, symbol_add,pbuff );
+    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
+
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
-    printk(KERN_INFO "CHECLL:KERN STACK Trace ");
+    printk(KERN_INFO "CHECLL:KERN STACK Trace\n");
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "jhash:: %x and %d", hashKey, hashKey);
+    printk(KERN_INFO "jhash::0x%x\n", hashKey);
   }
-  
+  spin_lock(&mySpin_lock);
+  time_fin = rdtsc();
+  time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
   spin_unlock(&mySpin_lock);
@@ -242,7 +241,7 @@ static int proc_show(struct seq_file *m, void *v){
 		}
 		//seq_printf(m ,"Count\t%d\t|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->pid,hnode->trace_hash);
 		seq_printf(m ,"Count\t%d\t|\tJHash\t%x\n", hnode->count_shed, hnode->trace_hash);
-    seq_printf(m ,"\tRun Time::\t%llu\n", hnode->htimer );
+    seq_printf(m ,"\tRun Time::\t%llu\trdtsc_ticks\n", hnode->htimer );
     seq_printf(m ,"-----------------------------------\n\n");
 	}
   return 0;
