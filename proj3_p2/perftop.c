@@ -33,6 +33,10 @@ static char search_lookup[MAX_SYMBOL_LEN] = "stack_trace_save_user";
 >>>>Create function pointer and use for stact track
 */
 static int counter=0;
+//SPINLOCK
+DEFINE_SPINLOCK(mySpin_lock);
+static unsigned long long time_start;
+unsigned long long time_fin;
 
 // Initialize Hashtable
 static DEFINE_HASHTABLE(myhashtable,MAX_b);
@@ -54,7 +58,7 @@ struct hEntry {
   uint32_t trace_hash;
   int count_shed;
   int pid;
-  //int key;
+  unsigned long long htimer;
   unsigned long stack_dump[mTrace];
   int len_trace;
   struct hlist_node hList;
@@ -91,6 +95,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
     if(trace_hash == tnode->trace_hash){
       //found : increment
       tnode->count_shed++;
+      hnode->htimer += time_start - time_fin;
       return 0;
       }
   }
@@ -106,6 +111,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
   	hnode->stack_dump[i] = dump[i];
   	i++;
   }
+  hnode->htimer = time_start - time_fin;
   hash_add(myhashtable,&hnode->hList, hnode->trace_hash);
   return 0;
 }
@@ -147,6 +153,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   int len_trace;
   u32 hashKey;
   struct task_struct * my_task;
+
   /*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -156,9 +163,12 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   /* A dump_stack() here will give a stack backtrace */
   //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
   //printk(KERN_INFO "RSI addr = %lx \n",regs->si);
+  spin_lock(&mySpin_lock);
   if((regs->si)==0) return 0;
 
   my_task = (struct task_struct *)regs->si;
+  time_fin = rdtsc();
+  time_fin-=time_start
   /*
   Use stack_trace_save function for a kernel task
   Use save_stack_trace_user function for a user task
@@ -191,8 +201,10 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
     printk(KERN_INFO "jhash:: %x and %d", hashKey, hashKey);
   }
+  
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
+  spin_unlock(&mySpin_lock);
 
   counter = my_task->pid;
   return 0;
@@ -306,6 +318,7 @@ static int kprobe_init(void){
 
 static int __init proj_init(void) {
   int err=0;
+  time_start = rdtsc();
   proc_create("perftop", 0, NULL, &myops);
 
   err+=kprobe_init();
