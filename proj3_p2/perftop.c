@@ -196,9 +196,9 @@ int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
   */
   struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_ATOMIC);
   //int rbStatus = 0;
-
   struct rb_node *temp,*curnode;
   struct rbEntry *rbelement;
+  unsigned long long prev_timer=0;
   int i;
   
   curnode=rb_first(&rbRoot);
@@ -208,6 +208,8 @@ int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
     temp = curnode;
     //printk(KERN_INFO "Current RB Entry with %u",rbelement->trace_hash);
     if(rbelement->trace_hash == jhashkey){
+      //Store previous run time
+      prev_timer = rbelement->val;
       //Remove existing 
       //printk(KERN_INFO "Removing RB Entry with %u",rbelement->trace_hash);
       rb_erase(curnode, &rbRoot);
@@ -220,7 +222,7 @@ int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
   {
     return -ENOMEM;
   }//create Node
-  rbTreeNode->val = time_fin - time_start;
+  rbTreeNode->val = prev_timer + time_fin - time_start;
   rbTreeNode->len_trace = len_trace;
   rbTreeNode->trace_hash = jhashkey;
   i=0;
