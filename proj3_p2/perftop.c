@@ -16,6 +16,7 @@
 #include <linux/stacktrace.h>
 #include <linux/string.h>
 #include <linux/jhash.h>
+#include <linux/rbtree.h>
 
 #define MAX_SYMBOL_LEN  64
 #define MAX_b 8
@@ -63,6 +64,18 @@ struct hEntry {
   int len_trace;
   struct hlist_node hList;
 };
+
+/* Red-Black Tree*/
+struct rbEntry {
+  //runtime is stored in val
+  unsigned long long val;
+  unsigned long stack_dump[mTrace];
+  uint32_t trace_hash;
+  int len_trace;
+  struct rb_node rbNode;
+};
+
+struct rb_root rbRoot = RB_ROOT;
 /* For each probe you need to allocate a kprobe structure */
 static struct kprobe kproc_open = {
   .symbol_name  = symbol,
@@ -116,6 +129,68 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
   return 0;
 }
 
+//RB Tree inserter
+int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
+  struct rb_node **new = &(root->rb_node), *parent = NULL;
+  struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_KERNEL);
+  int rbStatus = 0;
+
+  struct rb_node *temp,*curnode;
+  struct rbEntry *rbelement;
+  int i;
+  if(!rbTreeNode && sizeof(*rbTreeNode))
+  {
+    return -ENOMEM;
+  }
+
+  curnode=rb_first(&rbRoot);
+  while(curnode){
+    rbelement = rb_entry(curnode, struct rbEntry, rbnode);
+    temp = curnode;
+    if(rbelement->trace_hash == jhash){
+      rb_erase(curnode, &rbRoot);
+      kfree(rbelement);
+      break;
+    }
+    curnode= rb_next(temp);
+  }
+  //create Node
+  rbTreeNode->val = time_start - time_fin;
+  rbTreeNode->len_trace = len_trace;
+  rbTreeNode->trace_hash = jhash;
+  i=0;
+  while(i < rbTreeNode->len_trace){
+    rbTreeNode->stack_dump[i] = dump[i];
+    i++;
+  }
+  //--
+  rbStatus = rbInsert(&rbRoot, rbTreeNode);
+
+}
+int rbInsert(struct rb_root *root, struct rbEntry *data){
+  
+  struct rb_node **new = &(root->rb_node), *parent = NULL;
+
+  /* Figure out where to put new node */
+  while (*new) {
+    struct rbEntry *this = container_of(*new, struct rbEntry, rbNode);
+
+    parent = *new;
+    if (data->val < this->val)
+      new = &((*new)->rb_left);
+    else if (data->val > this->val)
+      new = &((*new)->rb_right);
+    else
+      return -1;
+  }
+
+  /* Add new node and rebalance tree. */
+  rb_link_node(&data->rbNode, parent, new);
+  rb_insert_color(&data->rbNode, root);
+
+  return 0;
+}
+
 int hash_inc_pid(int pid, u32 trace_hash){
   /*
   Function to Insert/Increment Hash table Node with key = pid
@@ -153,7 +228,6 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   int len_trace;
   u32 hashKey;
   struct task_struct * my_task;
-
   /*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -203,6 +277,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
+  rb_inc_timer(len_trace, stack_storer);
   spin_unlock(&mySpin_lock);
 
   counter = my_task->pid;
@@ -227,9 +302,31 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
 static int proc_show(struct seq_file *m, void *v){
 
   int i;
+  int rb_count=20;
   char buf[mBUFSIZE];
   struct hEntry *hnode;
+  struct rbEntry *myrb;
+  struct rb_node *node;
   
+  node = rb_last(&rbRoot);
+  seq_printf(m ,"------------RB Tree : Most scheduled traces-\n");
+  while(node && rb_count>0){
+    myrb= rb_entry(node, struct rbEntry, rbnode);
+    node = rb_prev(node);
+    i = 0;
+    while(i < myrb->len_trace)
+    {
+      seq_printf(m ,"%pS\n", (void *)myrb->stack_dump[i]);
+      i++;
+    }
+    //seq_printf(m ,"Count\t%d\t|\tJHash\t%x\n", myrb->count_shed, myrb->trace_hash);
+    seq_printf(m ,"\tRun Time::\t%llu\trdtsc_ticks\n", myrb->val );
+    seq_printf(m ,"-----------------------------------\n\n");
+
+    rb_count--;
+  }
+
+  /*
   seq_printf(m, "HASHTABLE: Stack Counter and Trace\n");
   hash_for_each(myhashtable, bkt, hnode, hList){
   	seq_printf(m ,"------------Stack Trace------------\n");
@@ -244,6 +341,8 @@ static int proc_show(struct seq_file *m, void *v){
     seq_printf(m ,"\tRun Time::\t%llu\trdtsc_ticks\n", hnode->htimer );
     seq_printf(m ,"-----------------------------------\n\n");
 	}
+  */
+
   return 0;
 }
 
@@ -330,6 +429,17 @@ static int __init proj_init(void) {
 static void __exit proj_exit(void) {
   
   struct hEntry *tnode;
+  struct rb_node *node, *tempN;
+  struct rbEntry *element;
+  node = rb_first(&rbRoot);
+  while(node){
+    element = rb_entry(node, struct rbEntry, rbnode); 
+    tempN = node;
+    rb_erase(node, &rbRoot);
+    node = rb_next(tempN);
+    kfree(element); 
+  }
+
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
     hash_del(&tnode->hList);
