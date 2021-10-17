@@ -242,6 +242,7 @@ static int proc_show(struct seq_file *m, void *v){
 		}
 		//seq_printf(m ,"Count\t%d\t|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->pid,hnode->trace_hash);
 		seq_printf(m ,"Count\t%d\t|\tJHash\t%x\n", hnode->count_shed, hnode->trace_hash);
+    seq_printf(m ,"\tRun Time::\t%llu\n", hnode->htimer );
     seq_printf(m ,"-----------------------------------\n\n");
 	}
   return 0;
