@@ -131,7 +131,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
 
 //RB Tree inserter
 int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
-  struct rb_node **new = &(rbRoot->rb_node), *parent = NULL;
+  struct rb_node **new = &((&rbRoot)->rb_node), *parent = NULL;
   struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_KERNEL);
   int rbStatus = 0;
 
@@ -165,7 +165,7 @@ int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
   }
   //--
   rbStatus = rbInsert(&rbRoot, rbTreeNode);
-
+  return 0;
 }
 int rbInsert(struct rb_root *root, struct rbEntry *data){
   
