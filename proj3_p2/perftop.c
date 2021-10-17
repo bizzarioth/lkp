@@ -168,7 +168,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 
   my_task = (struct task_struct *)regs->si;
   time_fin = rdtsc();
-  time_fin-=time_start
+  time_fin-=time_start;
   /*
   Use stack_trace_save function for a kernel task
   Use save_stack_trace_user function for a user task
@@ -240,8 +240,9 @@ static int proc_show(struct seq_file *m, void *v){
 			seq_printf(m ,"%pS\n", (void *)hnode->stack_dump[i]);
 			i++;
 		}
-		seq_printf(m ,"Count\t%d|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->pid,hnode->trace_hash);
-		seq_printf(m ,"-----------------------------------\n\n");
+		//seq_printf(m ,"Count\t%d\t|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->pid,hnode->trace_hash);
+		seq_printf(m ,"Count\t%d\t|\tJHash\t%x\n", hnode->count_shed, hnode->trace_hash);
+    seq_printf(m ,"-----------------------------------\n\n");
 	}
   return 0;
 }
