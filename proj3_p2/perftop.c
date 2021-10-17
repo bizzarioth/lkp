@@ -32,7 +32,6 @@ static char search_lookup[MAX_SYMBOL_LEN] = "stack_trace_save_user";
 >>>pass stack_trace_save_user and get ADD of that
 >>>>Create function pointer and use for stact track
 */
-static struct task_struct * my_task; 
 static int counter=0;
 
 // Initialize Hashtable
@@ -52,11 +51,12 @@ int or = 4;
 int bkt = 0;
 
 struct hEntry {
-  u32 trace_hash;
+  uint32_t trace_hash;
   int count_shed;
-  int val;
-  //int val2;
-  int key;
+  int pid;
+  //int key;
+  unsigned long stack_dump[mTrace];
+  int len_trace;
   struct hlist_node hList;
 };
 /* For each probe you need to allocate a kprobe structure */
@@ -71,11 +71,12 @@ MODULE_AUTHOR("[Mukund Agarwal]");
 MODULE_DESCRIPTION("Project - 3");
 
 //Hash Table increment
-static int hash_inc_jhash(u32 trace_hash, int pid){
+static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned long *dump){
   /*
   Function to Insert/Increment Hash table Node with key = JHash(Stack_Trace)
     Debug: Takes jHash of trace and stores it
   */
+  int i;
   struct hEntry *tnode;
   struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
   if(!hnode && sizeof(*hnode))
@@ -83,34 +84,31 @@ static int hash_inc_jhash(u32 trace_hash, int pid){
     return -ENOMEM;
   }
   //search pid(key)
-  hash_for_each(myhashtable, bkt, tnode, hList)
+  hash_for_each_possible(myhashtable, bkt, tnode, hList)
   {
     //if(pid==tnode->key){
-    if(trace_hash == tnode->key){
+    if(trace_hash == tnode->trace_hash){
       //found : increment
       tnode->count_shed++;
-      //hnode->val2 = pid;
       return 0;
       }
   }
 
   //create Node if it doesnot exist
-  hnode->key = 0+trace_hash;
+  hnode->trace_hash = trace_hash;
   hnode->count_shed = 1;
   hnode->val = pid;
-  //hnode->val2 = pid;
-  hash_add(myhashtable,&hnode->hList, trace_hash);
+  hnode->len_trace = len_trace;
+  
+  i=0;
+  while(i < hnode->len_trace){
+  	hnode->stack_dump[i] = dump[i];
+  	i++;
+  }
+  hash_add(myhashtable,&hnode->hList, hnode->trace_hash);
   return 0;
 }
-static void hash_cleanup(void){
-	struct hEntry *tnode;
-  hash_for_each(myhashtable, bkt, tnode, hList)
-  {
-    hash_del(&tnode->hList);
-		kfree(tnode);
-  }
-  
-}
+
 int hash_inc_pid(int pid, u32 trace_hash){
   /*
   Function to Insert/Increment Hash table Node with key = pid
@@ -147,7 +145,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   char pbuff[256];
   int len_trace;
   u32 hashKey;
-  //unsigned long symbol_add = kallsyms_lookup_name(stack_user_symbol);
+  struct task_struct * my_task;
   /*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -172,7 +170,10 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     //len_trace=stack_trace_save_user(stack_storer,mTrace);
     //Get save_user ADD
     pointer_save_user = (func_user*)pointer_lookup_name(search_lookup);
-
+    if(pointer_save_user == NULL){
+    	printk(KERN_INFO "KM ERROR: Did Not Find stack_trace_save_user\n");
+    	return -1;
+    }
     printk(KERN_INFO "USER PID\n");
     len_trace = pointer_save_user(stack_storer, mTrace);
     printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
@@ -190,14 +191,9 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     printk(KERN_INFO "jhash:: %x and %d", hashKey, hashKey);
   }
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
-  hash_inc_jhash(hashKey, (int)my_task->pid);
+  hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
 
   counter = my_task->pid;
-  return 0;
-}
-static int __kprobes handler_pre_kallsym(struct kprobe *p, struct pt_regs *regs)
-{
-  printk(KERN_INFO "KALLSYMS PREHANDLER");
   return 0;
 }
 
@@ -217,15 +213,32 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
 }
 
 
-static int proc_show(struct seq_file *m, void *v){
-  printk(KERN_INFO "Hello world kmesg! %d\n",counter);
-  seq_printf(m, "Hello world\n");
-  seq_printf(m, "%d\n",counter);
-  return 0;
-}
 static int proc_opener(struct inode *in, struct file *f){
   return single_open(f, proc_show, NULL);
 }
+static int proc_show(struct seq_file *m, void *v){
+
+  int i;
+  char buf[mBUFSIZE];
+  struct hEntry *hnode;
+  
+  seq_printf(m, "HASHTABLE: Stack Counter and Trace")
+  hash_for_each(myhashtable, bkt, hnode, hList)
+  {
+  	seq_printf(m ,"------------Stack Trace------------\n\n");
+		i = 0;
+		while(i < hnode->len_trace)
+		{
+			seq_printf(m ,"%pS\n", (void *)hnode->stack_dump[i]);
+			i++;
+		}
+		seq_printf(m ,"Count\t%d|PID\t%d|JHash\t%x\n", hnode->count_shed, hnode->val,hnode->trace_hash);
+		seq_printf(m ,"-----------------------------------\n\n");
+	}
+
+  return 0;
+}
+
 static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t *ppos){
 
   int len=0;
@@ -303,6 +316,14 @@ static int __init proj_init(void) {
 }
 
 static void __exit proj_exit(void) {
+  
+  struct hEntry *tnode;
+  hash_for_each(myhashtable, bkt, tnode, hList)
+  {
+    hash_del(&tnode->hList);
+		kfree(tnode);
+  }
+
   remove_proc_entry("perftop", NULL);
 
   unregister_kprobe(&kproc_open);
@@ -310,8 +331,6 @@ static void __exit proj_exit(void) {
 
   unregister_kprobe(&k_kallsym);
   pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
-  
-  hash_cleanup();
 
   return;
 }
