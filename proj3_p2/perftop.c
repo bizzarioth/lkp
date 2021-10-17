@@ -131,7 +131,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
 
 //RB Tree inserter
 int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
-  struct rb_node **new = &(root->rb_node), *parent = NULL;
+  struct rb_node **new = &(rbRoot->rb_node), *parent = NULL;
   struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_KERNEL);
   int rbStatus = 0;
 
@@ -145,7 +145,7 @@ int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
 
   curnode=rb_first(&rbRoot);
   while(curnode){
-    rbelement = rb_entry(curnode, struct rbEntry, rbnode);
+    rbelement = rb_entry(curnode, struct rbEntry, rbNode);
     temp = curnode;
     if(rbelement->trace_hash == jhash){
       rb_erase(curnode, &rbRoot);
@@ -311,7 +311,7 @@ static int proc_show(struct seq_file *m, void *v){
   node = rb_last(&rbRoot);
   seq_printf(m ,"------------RB Tree : Most scheduled traces-\n");
   while(node && rb_count>0){
-    myrb= rb_entry(node, struct rbEntry, rbnode);
+    myrb= rb_entry(node, struct rbEntry, rbNode);
     node = rb_prev(node);
     i = 0;
     while(i < myrb->len_trace)
@@ -433,7 +433,7 @@ static void __exit proj_exit(void) {
   struct rbEntry *element;
   node = rb_first(&rbRoot);
   while(node){
-    element = rb_entry(node, struct rbEntry, rbnode); 
+    element = rb_entry(node, struct rbEntry, rbNode); 
     tempN = node;
     rb_erase(node, &rbRoot);
     node = rb_next(tempN);
