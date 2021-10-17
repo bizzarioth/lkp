@@ -206,10 +206,10 @@ int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
   while(curnode){
     rbelement = rb_entry(curnode, struct rbEntry, rbNode);
     temp = curnode;
-    printk(KERN_INFO "Current RB Entry with %u",rbelement->trace_hash);
+    //printk(KERN_INFO "Current RB Entry with %u",rbelement->trace_hash);
     if(rbelement->trace_hash == jhashkey){
       //Remove existing 
-      printk(KERN_INFO "Removing RB Entry with %u",rbelement->trace_hash);
+      //printk(KERN_INFO "Removing RB Entry with %u",rbelement->trace_hash);
       rb_erase(curnode, &rbRoot);
       kfree(rbelement);
       break;
@@ -287,8 +287,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   time_fin = rdtsc();
   //time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
-  hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
-  //rb_inc_timer(hashKey,len_trace, stack_storer);
+  //hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
+  rb_inc_timer(hashKey,len_trace, stack_storer);
   
   spin_unlock(&mySpin_lock);
 
@@ -321,12 +321,14 @@ static int proc_show(struct seq_file *m, void *v){
   struct hEntry *hnode;
   struct rbEntry *myrb;
   struct rb_node *node;
-  /*
+  
   node = rb_last(&rbRoot);
-  seq_printf(m ,"------------RB Tree : Most scheduled traces-\n");
+  seq_printf(m ,"RB Tree : Most scheduled traces-\n");
   while(node && rb_count>0){
     myrb= rb_entry(node, struct rbEntry, rbNode);
     node = rb_prev(node);
+    seq_printf(m ,"------------Stack Trace------------\n");
+    seq_printf(m ,"\t Thread jHash:\t%u\n",myrb->trace_hash);
     i = 0;
     while(i < myrb->len_trace)
     {
@@ -335,12 +337,10 @@ static int proc_show(struct seq_file *m, void *v){
     }
     //seq_printf(m ,"Count\t%d\t|\tJHash\t%x\n", myrb->count_shed, myrb->trace_hash);
     seq_printf(m ,"\tRun Time::\t%llu\trdtsc_ticks\n", myrb->val );
-    seq_printf(m ,"-----------------------------------\n\n");
-
+    seq_printf(m ,"-----------------------------------\n");
     rb_count--;
   }
-  */
-
+  seq_printf(m ,"/----END--OF--RedBlackTree------------------------/-\n\n");
   
   seq_printf(m, "HASHTABLE: Stack Counter and Trace\n");
   hash_for_each(myhashtable, bkt, hnode, hList){
