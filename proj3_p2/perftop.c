@@ -108,7 +108,7 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
     if(trace_hash == tnode->trace_hash){
       //found : increment
       tnode->count_shed++;
-      hnode->htimer += time_start - time_fin;
+      hnode->htimer += time_fin - time_start;
       return 0;
       }
   }
@@ -124,78 +124,16 @@ static int hash_inc_jhash(uint32_t trace_hash, int pid, int len_trace, unsigned 
   	hnode->stack_dump[i] = dump[i];
   	i++;
   }
-  hnode->htimer = time_start - time_fin;
+  hnode->htimer = time_fin - time_start;
   hash_add(myhashtable,&hnode->hList, hnode->trace_hash);
-  return 0;
-}
-
-//RB Tree inserter
-int rbInsert(struct rb_root *root, struct rbEntry *data){
-  
-  struct rb_node **new = &(root->rb_node), *parent = NULL;
-
-  /* Figure out where to put new node */
-  while (*new) {
-    struct rbEntry *this = container_of(*new, struct rbEntry, rbNode);
-
-    parent = *new;
-    if (data->val < this->val)
-      new = &((*new)->rb_left);
-    else if (data->val > this->val)
-      new = &((*new)->rb_right);
-    else
-      return -1;
-  }
-
-  /* Add new node and rebalance tree. */
-  rb_link_node(&data->rbNode, parent, new);
-  rb_insert_color(&data->rbNode, root);
-
-  return 0;
-}
-
-int rb_inc_timer(uint32_t jhash, int len_trace, unsigned long *dump){
-  struct rb_node **new = &((&rbRoot)->rb_node), *parent = NULL;
-  struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_KERNEL);
-  int rbStatus = 0;
-
-  struct rb_node *temp,*curnode;
-  struct rbEntry *rbelement;
-  int i;
-  if(!rbTreeNode && sizeof(*rbTreeNode))
-  {
-    return -ENOMEM;
-  }
-
-  curnode=rb_first(&rbRoot);
-  while(curnode){
-    rbelement = rb_entry(curnode, struct rbEntry, rbNode);
-    temp = curnode;
-    if(rbelement->trace_hash == jhash){
-      rb_erase(curnode, &rbRoot);
-      kfree(rbelement);
-      break;
-    }
-    curnode= rb_next(temp);
-  }
-  //create Node
-  rbTreeNode->val = time_start - time_fin;
-  rbTreeNode->len_trace = len_trace;
-  rbTreeNode->trace_hash = jhash;
-  i=0;
-  while(i < rbTreeNode->len_trace){
-    rbTreeNode->stack_dump[i] = dump[i];
-    i++;
-  }
-  //--
-  rbStatus = rbInsert(&rbRoot, rbTreeNode);
   return 0;
 }
 
 int hash_inc_pid(int pid, u32 trace_hash){
   /*
-  Function to Insert/Increment Hash table Node with key = pid
-    Debug: Takes jHash of trace and stores it
+  Project 3 Part 1
+  Function to Insert/Increment Hash table Node
+    Key = pid
   */
   struct hEntry *tnode;
   struct hEntry *hnode = kmalloc(sizeof(*hnode), GFP_ATOMIC);
@@ -219,7 +157,81 @@ int hash_inc_pid(int pid, u32 trace_hash){
   hash_add(myhashtable,&hnode->hList, hnode->pid);
   return 0;
 }
+//RB Tree inserter
+/*Project 3 Part 2
+  - RbTree default insert function
+  - RbTree function to store node with new runtime for a jHash
+*/
+int rbInsert(struct rb_root *root, struct rbEntry *data){
+  
+  struct rb_node **new = &(root->rb_node), *parent = NULL;
 
+  /* Figure out where to put new node */
+  while (*new) {
+    struct rbEntry *this = container_of(*new, struct rbEntry, rbNode);
+
+    parent = *new;
+    if (data->val < this->val)
+      new = &((*new)->rb_left);
+    else if (data->val > this->val)
+      new = &((*new)->rb_right);
+    else
+      return -1;
+  }
+
+  /* Add new node and rebalance tree. */
+  rb_link_node(&data->rbNode, parent, new);
+  rb_insert_color(&data->rbNode, root);
+
+  return 0;
+}
+int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
+  /*
+  Delete node found with existing jhashkey
+  Insert node with new time val
+  @jhashkey : Node key
+  @len_trace : Length of trace dump
+  @dump : Trace dump pointer
+
+  */
+  struct rbEntry *rbTreeNode = kmalloc(sizeof(*rbTreeNode), GFP_ATOMIC);
+  //int rbStatus = 0;
+
+  struct rb_node *temp,*curnode;
+  struct rbEntry *rbelement;
+  int i;
+  
+  curnode=rb_first(&rbRoot);
+  //Traverse RbTree for existing jHashkey
+  while(curnode){
+    rbelement = rb_entry(curnode, struct rbEntry, rbNode);
+    temp = curnode;
+    printk(KERN_INFO "Current RB Entry with %u",rbelement->trace_hash);
+    if(rbelement->trace_hash == jhashkey){
+      //Remove existing 
+      printk(KERN_INFO "Removing RB Entry with %u",rbelement->trace_hash);
+      rb_erase(curnode, &rbRoot);
+      kfree(rbelement);
+      break;
+    }
+    curnode= rb_next(temp);
+  }
+  if(!rbTreeNode && sizeof(*rbTreeNode))
+  {
+    return -ENOMEM;
+  }//create Node
+  rbTreeNode->val = time_fin - time_start;
+  rbTreeNode->len_trace = len_trace;
+  rbTreeNode->trace_hash = jhashkey;
+  i=0;
+  while(i < len_trace){
+    rbTreeNode->stack_dump[i] = dump[i];
+    i++;
+  }
+  //--
+  rbInsert(&rbRoot, rbTreeNode);
+  return 0;
+}
 
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
@@ -236,8 +248,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   #endif
   */
   /* A dump_stack() here will give a stack backtrace */
-  //printk(KERN_INFO "KM PID! %d\n",my_task->pid);
-  //printk(KERN_INFO "RSI addr = %lx \n",regs->si);
+  //printk(KERN_INFO "KM PID! %d\n RSI addr: %lx\n",my_task->pid, regs->si);
 
   if((regs->si)==0) return 0;
 
@@ -250,9 +261,8 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   */
   printk(KERN_INFO "KM PID: %d task_struct->mm = %pB",my_task->pid, my_task->mm);
   if(my_task->mm){
-    //user thread
-    //len_trace=stack_trace_save_user(stack_storer,mTrace);
-    //Get save_user ADD
+    //USER thread
+    //Get save_user() ADDRESS
     pointer_save_user = (func_user*)pointer_lookup_name(search_lookup);
     if(pointer_save_user == NULL){
     	printk(KERN_INFO "KM ERROR: Did Not Find stack_trace_save_user\n");
@@ -260,26 +270,29 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     }
     printk(KERN_INFO "USER PID\n");
     len_trace = pointer_save_user(stack_storer, mTrace);
-    printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
+    //printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    //printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
+    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
 
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
-    printk(KERN_INFO "CHECLL:KERN STACK Trace\n");
-    //stack_trace_print(stack_storer,len_trace,5);
+    printk(KERN_INFO "KERN STACK Trace\n");
+    stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    //printk(KERN_INFO "jhash::0x%x\n", hashKey);
+    printk(KERN_INFO "jhash::0x%x\n", hashKey);
   }
   spin_lock(&mySpin_lock);
   time_fin = rdtsc();
-  time_fin-=time_start;
+  //time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
-  rb_inc_timer(hashKey,len_trace, stack_storer);
+  //rb_inc_timer(hashKey,len_trace, stack_storer);
+  
   spin_unlock(&mySpin_lock);
+
+  time_start = rdtsc();
 
   counter = my_task->pid;
   return 0;
@@ -308,7 +321,7 @@ static int proc_show(struct seq_file *m, void *v){
   struct hEntry *hnode;
   struct rbEntry *myrb;
   struct rb_node *node;
-  
+  /*
   node = rb_last(&rbRoot);
   seq_printf(m ,"------------RB Tree : Most scheduled traces-\n");
   while(node && rb_count>0){
@@ -326,8 +339,9 @@ static int proc_show(struct seq_file *m, void *v){
 
     rb_count--;
   }
+  */
 
-  /*
+  
   seq_printf(m, "HASHTABLE: Stack Counter and Trace\n");
   hash_for_each(myhashtable, bkt, hnode, hList){
   	seq_printf(m ,"------------Stack Trace------------\n");
@@ -342,7 +356,7 @@ static int proc_show(struct seq_file *m, void *v){
     seq_printf(m ,"\tRun Time::\t%llu\trdtsc_ticks\n", hnode->htimer );
     seq_printf(m ,"-----------------------------------\n\n");
 	}
-  */
+  
 
   return 0;
 }
@@ -355,20 +369,16 @@ static ssize_t myread(struct file *file, char __user *ubuf,size_t count, loff_t 
   int len=0;
   char buf[mBUFSIZE];
   struct hEntry *hnode;
+  if(*ppos > 0 || count < mBUFSIZE) return 0;
 
-
-  if(*ppos > 0 || count < mBUFSIZE)
-      return 0;
   len += sprintf(buf,"Hash Table: \n");
-  //len += sprintf(buf," PID	|	Times Called	|	JHash	?\n");
-  len += sprintf(buf," jHash	|	Times Called	|	PID1\n");
+  //len += sprintf(buf," PID\t|\tTimes Called\t|\tJHash\n");
+  len += sprintf(buf," jHash\t|\tTimes Called\t|\tPID1\n");
   
   hash_for_each(myhashtable, bkt, hnode, hList)
   {
-    
-    //len += sprintf(buf + len," %d	|	%d	|	%x	|	%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
-    len += sprintf(buf + len,"	%d	|	%d	|	%u\n",hnode->pid ,hnode->count_shed, hnode->trace_hash);
-
+    //len += sprintf(buf + len," %d\t|\t%d\t|\t%x\t|\t%d\n ",hnode->key,hnode->count_shed, hnode->trace_hash, hnode->chk);
+    len += sprintf(buf + len,"	%d\t|\t%d\t|\t%u\n",hnode->pid ,hnode->count_shed, hnode->trace_hash);
   }
 
   len += sprintf(buf + len, "\n");
@@ -393,9 +403,6 @@ static int kprobe_init(void){
   kproc_open.pre_handler = handler_pre;
   kproc_open.post_handler = handler_post;
 
-  //k_kallsym.pre_handler = handler_pre_kallsym;
-  //k_kallsym.post_handler = handler_post;
-  
   ret_kallsym = register_kprobe(&k_kallsym);
   if (ret_kallsym < 0) {
     pr_err("register k_kallsym failed, returned %d\n", ret_kallsym);
@@ -404,8 +411,8 @@ static int kprobe_init(void){
   pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
   /* Get pointers to lookup and save_user*/
   pointer_lookup_name = (func_lookup*)k_kallsym.addr;
-  //printk(KERN_INFO "CALL lookup pointer\n");
-  //printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
+  printk(KERN_INFO "CALL lookup pointer\n");
+  printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
   
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
@@ -432,6 +439,7 @@ static void __exit proj_exit(void) {
   struct hEntry *tnode;
   struct rb_node *node, *tempN;
   struct rbEntry *element;
+  //Delete RBTree memory
   node = rb_first(&rbRoot);
   while(node){
     element = rb_entry(node, struct rbEntry, rbNode); 
@@ -440,7 +448,7 @@ static void __exit proj_exit(void) {
     node = rb_next(tempN);
     kfree(element); 
   }
-
+  //Delete HashTable memory
   hash_for_each(myhashtable, bkt, tnode, hList)
   {
     hash_del(&tnode->hList);
