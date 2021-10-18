@@ -243,14 +243,14 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   int len_trace;
   u32 hashKey;
   struct task_struct * my_task;
-  /*
+/*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
       p->symbol_name, p->addr, regs->ip, regs->flags);
   #endif
-  */
+*/
   /* A dump_stack() here will give a stack backtrace */
-  //printk(KERN_INFO "KM PID! %d\n RSI addr: %lx\n",my_task->pid, regs->si);
+//  printk(KERN_INFO "KM PID! %d\n RSI addr: %lx\n",my_task->pid, regs->si);
 
   if((regs->si)==0) return 0;
 
@@ -261,7 +261,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   -----> use instead stack_trace_save_user
   mm==NULL means kernel task
   */
-  printk(KERN_INFO "KM PID: %d task_struct->mm = %pB",my_task->pid, my_task->mm);
+//  printk(KERN_INFO "KM PID: %d task_struct->mm = %pB",my_task->pid, my_task->mm);
   if(my_task->mm){
     //USER thread
     //Get save_user() ADDRESS
@@ -270,20 +270,20 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     	printk(KERN_INFO "KM ERROR: Did Not Find stack_trace_save_user\n");
     	return -1;
     }
-    printk(KERN_INFO "USER PID\n");
+//    printk(KERN_INFO "USER PID\n");
     len_trace = pointer_save_user(stack_storer, mTrace);
-    //printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
+//    printk(KERN_INFO "USER PID Stack Trace %d entries\n",len_trace);
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
+//    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
 
   }else{
     //kernel thread
     len_trace = stack_trace_save(stack_storer,mTrace,0);
-    printk(KERN_INFO "KERN STACK Trace\n");
+//    printk(KERN_INFO "KERN STACK Trace\n");
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
-    printk(KERN_INFO "jhash::0x%x\n", hashKey);
+//    printk(KERN_INFO "jhash::0x%x\n", hashKey);
   }
   spin_lock(&mySpin_lock);
   time_fin = rdtsc();
@@ -303,7 +303,7 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 /* kprobe post_handler: called after the probed instruction is executed */
 static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
   unsigned long flags){
-  /*
+/*
     #ifdef CONFIG_X86
       pr_info("<%s> p->addr = 0x%p, flags = 0x%lx\n",
         p->symbol_name, p->addr, regs->flags);
@@ -312,7 +312,7 @@ static void __kprobes handler_post(struct kprobe *p, struct pt_regs *regs,
       pr_info("<%s> p->addr = 0x%p, pstate = 0x%lx\n",
         p->symbol_name, p->addr, (long)regs->pstate);
     #endif
-  */
+ */
 }
 
 static int proc_show(struct seq_file *m, void *v){
@@ -410,18 +410,23 @@ static int kprobe_init(void){
     pr_err("register k_kallsym failed, returned %d\n", ret_kallsym);
     return ret_kallsym;
   }
-  pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
+//  pr_info("Planted k_kallsym probe at %p\n", k_kallsym.addr);
   /* Get pointers to lookup and save_user*/
   pointer_lookup_name = (func_lookup*)k_kallsym.addr;
-  printk(KERN_INFO "CALL lookup pointer\n");
-  printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
+  if(pointer_lookup_name == NULL){
+//    printk(KERN_INFO "KM ERROR: Did Not Find kallsyms_lookup_name\n");
+    return -1;
+  }
+
+//  printk(KERN_INFO "CALL lookup pointer\n");
+//  printk(KERN_INFO "ADD returned for stack_trace_save_user : %lx \n", pointer_lookup_name(search_lookup));
   
   ret = register_kprobe(&kproc_open);
   if (ret < 0) {
     pr_err("register_kprobe failed, returned %d\n", ret);
     return ret;
   }
-  pr_info("Planted kprobe at %p\n", kproc_open.addr);
+//  pr_info("Planted kprobe at %p\n", kproc_open.addr);
 
   return 0;
 }
@@ -460,10 +465,10 @@ static void __exit proj_exit(void) {
   remove_proc_entry("perftop", NULL);
 
   unregister_kprobe(&kproc_open);
-  pr_info("kprobe at %p unregistered\n", kproc_open.addr);
+//  pr_info("kprobe at %p unregistered\n", kproc_open.addr);
 
   unregister_kprobe(&k_kallsym);
-  pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
+//  pr_info("kprobe at %p unregistered\n", k_kallsym.addr);
 
   return;
 }
