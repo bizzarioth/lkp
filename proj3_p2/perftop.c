@@ -243,7 +243,6 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
   int len_trace;
   u32 hashKey;
   struct task_struct * my_task;
-  int kernel_task_flag=0;
 /*
   #ifdef CONFIG_X86
     pr_info("<%s> p->addr = 0x%p, ip = %lx, flags = 0x%lx\n",
@@ -277,7 +276,6 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
 //    printk(KERN_INFO "USER jhash::0x%x\n", hashKey);
-    kernel_task_flag=0;
 
   }else{
     //kernel thread
@@ -286,14 +284,13 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
 //    printk(KERN_INFO "jhash::0x%x\n", hashKey);
-    kernel_task_flag=1;
   }
   spin_lock(&mySpin_lock);
   time_fin = rdtsc();
   //time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   //hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
-  if(kernel_task_flag) rb_inc_timer(hashKey,len_trace, stack_storer);
+  rb_inc_timer(hashKey,len_trace, stack_storer);
   
   spin_unlock(&mySpin_lock);
 
@@ -333,7 +330,7 @@ static int proc_show(struct seq_file *m, void *v){
     myrb= rb_entry(node, struct rbEntry, rbNode);
     node = rb_prev(node);
     seq_printf(m ,"------------Stack Trace------------\n");
-    seq_printf(m ,"Scheduled Task Rank::\t%d",(20-rb_count));
+    seq_printf(m ,"Scheduled Task Rank::\t%d\n",(21-rb_count));
     seq_printf(m ,"\t Thread jHash:\t%u\n",myrb->trace_hash);
     i = 0;
     while(i < myrb->len_trace)
