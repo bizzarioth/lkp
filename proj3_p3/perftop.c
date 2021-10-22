@@ -238,7 +238,7 @@ int rb_inc_timer(uint32_t jhashkey, int len_trace, unsigned long *dump){
 /* kprobe pre_handler: called just before the probed instruction is executed */
 static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-  unsigned long stack_storer[mTrace];
+  unsigned long stack_storer[mTrace],flags;
   char pbuff[256];
   int len_trace;
   u32 hashKey;
@@ -288,14 +288,14 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 //    printk(KERN_INFO "jhash::0x%x\n", hashKey);
     kernel_task_flag=1;
   }
-  spin_lock(&mySpin_lock);
+  spin_lock_irqsave(&mySpin_lock,flags);
   time_fin = rdtsc();
   //time_fin-=time_start;
   //hash_inc_pid((int)my_task->pid, u32 hashKey);
   //hash_inc_jhash(hashKey, (int)my_task->pid, len_trace, stack_storer);
   if(kernel_task_flag) rb_inc_timer(hashKey,len_trace, stack_storer);
   
-  spin_unlock(&mySpin_lock);
+  spin_unlock_irqrestore(&mySpin_lock,flags);
 
   time_start = rdtsc();
 
