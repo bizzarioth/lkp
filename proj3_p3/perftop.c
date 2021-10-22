@@ -281,7 +281,18 @@ static int __kprobes handler_pre(struct kprobe *p, struct pt_regs *regs)
 
   }else{
     //kernel thread
-    len_trace = stack_trace_save(stack_storer,mTrace,0);
+    /*
+    Skipping first 5 common entries of kernel stack dump [last parameter]
+ - handler_pre+0x275/0x3fe [perftop]
+ - aggr_pre_handler+0x3e/0x70
+ - kprobe_int3_handler+0x8f/0x170
+ - exc_int3+0x47/0x120
+ - asm_exc_int3+0x31/0x40
+ - pick_next_task_fair+0x1/0x300
+ - __schedule+0xeb/0x6c0
+ - schedule+0x41/0xa0
+    */
+    len_trace = stack_trace_save(stack_storer,mTrace,5);
 //    printk(KERN_INFO "KERN STACK Trace\n");
     stack_trace_print(stack_storer,len_trace,5);
     hashKey= jhash(stack_storer ,len_trace*sizeof(unsigned long) ,JHASH_INITVAL);
@@ -336,7 +347,9 @@ static int proc_show(struct seq_file *m, void *v){
     seq_printf(m ,"Scheduled Task Rank::\t%d\n",(21-rb_count));
     seq_printf(m ,"\t Thread jHash:\t%u\n",myrb->trace_hash);
     i = 0;
-    while(i < myrb->len_trace)
+    //while(i < myrb->len_trace)
+    /*  Printing only first 4 lines of kernel stack*/
+    while(i < 4)
     {
       seq_printf(m ,"%pS\n", (void *)myrb->stack_dump[i]);
       i++;
