@@ -2,6 +2,7 @@
 make
 sudo insmod perftop.ko
 #sudo dmesg| tail -100
+echo "-----Waiting 10 Seconds"
 sleep 10s
 echo "#--PROC_FILE--#"
 cat /proc/perftop
